@@ -1,0 +1,18 @@
+# Environment files (keep secrets local)
+.env
+
+# Dependency/vendor directories (optional but recommended)
+vendor/
+node_modules/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# Archives / backups
+*.zip
+*.tar
+*.tar.gz
+
+
