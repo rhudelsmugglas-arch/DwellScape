@@ -2,6 +2,9 @@
 session_start();
 header('Content-Type: application/json');
 
+// Load PayMongo config
+require_once 'config/paymongo.php';
+
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
@@ -14,7 +17,7 @@ if (!isset($_GET['payment_link_id'])) {
     exit();
 }
 
-$secret_key = 'REPLACE_WITH_SECRET';
+$secret_key = PAYMONGO_SECRET_KEY;
 $payment_link_id = $_GET['payment_link_id'];
 
 // Check payment link status

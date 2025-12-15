@@ -4,6 +4,9 @@ ini_set('display_errors', 0); // Don't display errors, but log them
 session_start();
 header('Content-Type: application/json');
 
+// Load PayMongo config (keys from .env, not from code)
+require_once 'config/paymongo.php';
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -12,8 +15,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // PayMongo API credentials
-$secret_key = 'REPLACE_WITH_SECRET';
-$public_key = 'REPLACE_WITH_PUBLIC';
+$secret_key = PAYMONGO_SECRET_KEY;
+$public_key = PAYMONGO_PUBLIC_KEY;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

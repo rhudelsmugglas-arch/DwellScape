@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'config/database.php';
+require_once 'config/paymongo.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -9,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Verify payment status if payment_link_id is in session or URL parameter
 $payment_verified = false;
-$secret_key = 'REPLACE_WITH_SECRET';
+$secret_key = PAYMONGO_SECRET_KEY;
 
 // Check for payment_link_id in session or URL
 $payment_link_id = null;
