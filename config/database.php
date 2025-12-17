@@ -279,4 +279,3 @@ try {
 } catch(PDOException $e) {
     // Foreign keys might already exist, ignore
 }
-?>
