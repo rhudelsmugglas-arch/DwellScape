@@ -1126,7 +1126,7 @@ if (isset($_POST['logout'])) {
                 <p>Sign in to your account</p>
             </div>
             <div class="error-message" id="loginError" style="display: none;"></div>
-            <form method="POST" id="loginForm" action="login.php" onsubmit="return handleLoginSubmit(event)">
+            <form method="POST" id="loginForm" action="login.php">
                 <div class="form-group">
                     <label for="loginUsername">Username</label>
                     <div class="input-with-icon">
@@ -1474,50 +1474,43 @@ if (isset($_POST['logout'])) {
             }, 4000);
         });
 
-        // Modal Functions - Define globally so onclick handlers can access them
-        window.openLoginModal = function() {
+        // Modal Functions
+        function openLoginModal() {
             document.getElementById('loginModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        };
+        }
 
-        window.closeLoginModal = function() {
+        function closeLoginModal() {
             document.getElementById('loginModal').classList.remove('active');
             document.body.style.overflow = '';
-            const loginForm = document.getElementById('loginForm');
-            if (loginForm) loginForm.reset();
-            const loginError = document.getElementById('loginError');
-            if (loginError) loginError.style.display = 'none';
-        };
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+        }
 
-        window.openSignupModal = function() {
+        function openSignupModal() {
             document.getElementById('signupModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        };
+        }
 
-        window.closeSignupModal = function() {
+        function closeSignupModal() {
             document.getElementById('signupModal').classList.remove('active');
             document.body.style.overflow = '';
-            const signupForm = document.getElementById('signupForm');
-            if (signupForm) signupForm.reset();
-            const signupError = document.getElementById('signupError');
-            if (signupError) signupError.style.display = 'none';
-        };
+            document.getElementById('signupForm').reset();
+            document.getElementById('signupError').style.display = 'none';
+        }
 
-        window.openForgotPasswordModal = function() {
+        function openForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        };
+        }
 
-        window.closeForgotPasswordModal = function() {
+        function closeForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').classList.remove('active');
             document.body.style.overflow = '';
-            const forgotForm = document.getElementById('forgotPasswordForm');
-            if (forgotForm) forgotForm.reset();
-            const forgotError = document.getElementById('forgotPasswordError');
-            if (forgotError) forgotError.style.display = 'none';
-            const forgotSuccess = document.getElementById('forgotPasswordSuccess');
-            if (forgotSuccess) forgotSuccess.style.display = 'none';
-        };
+            document.getElementById('forgotPasswordForm').reset();
+            document.getElementById('forgotPasswordError').style.display = 'none';
+            document.getElementById('forgotPasswordSuccess').style.display = 'none';
+        }
 
         // Close modals when clicking outside
         document.addEventListener('click', function(event) {
@@ -1537,52 +1530,7 @@ if (isset($_POST['logout'])) {
             }
         });
 
-        // Login form submission handler - use regular form POST for reliable sessions
-        function handleLoginSubmit(e) {
-            const form = e.target;
-            const errorDiv = document.getElementById('loginError');
-            const submitBtn = form.querySelector('button[type="submit"]');
-            
-            // Basic validation
-            const username = form.querySelector('[name="username"]').value.trim();
-            const password = form.querySelector('[name="password"]').value;
-            
-            if (!username || !password) {
-                e.preventDefault();
-                errorDiv.textContent = 'Please fill in all fields.';
-                errorDiv.style.display = 'block';
-                return false;
-            }
-            
-            // Show loading state
-            errorDiv.style.display = 'none';
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing in...';
-            
-            // Let form submit normally - session cookie will be set properly
-            return true;
-        }
-        
-        // Check for error in URL (from regular form submission)
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('error')) {
-            // Open login modal and show error
-            window.openLoginModal();
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = urlParams.get('error');
-            errorDiv.style.display = 'block';
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-        
-        // Ensure modal functions are available globally
-        window.openLoginModal = openLoginModal;
-        window.closeLoginModal = closeLoginModal;
-        window.openSignupModal = openSignupModal;
-        window.closeSignupModal = closeSignupModal;
-        
-        // Old AJAX handler - commented out, using regular form POST instead
-        /*
+        // Login form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -1614,12 +1562,11 @@ if (isset($_POST['logout'])) {
                                 redirectUrl = 'dashboard.php';
                             }
                             console.log('Login successful, redirecting to:', redirectUrl);
-                            console.log('Session cookie should be set, waiting before redirect...');
-                            // Longer delay to ensure session cookie is set and browser processes it
-                            setTimeout(function() {
-                                // Force reload to ensure cookies are sent
-                                window.location.href = redirectUrl;
-                            }, 500);
+                            console.log('Session ID from server:', response.session_id);
+                            
+                            // Use window.location.replace for a full page reload (no back button)
+                            // This ensures cookies are properly sent
+                            window.location.replace(redirectUrl);
                         } else {
                             // Show error message - no redirect
                             errorDiv.textContent = response.error || 'Invalid username or password.';

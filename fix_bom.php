@@ -8,6 +8,7 @@ $files = [
     'login.php',
     'dashboard.php',
     'signup.php',
+    'home.php',
     'admin/admin.php',
     'config/database.php'
 ];
@@ -25,11 +26,16 @@ foreach ($files as $file) {
             echo "No BOM found in: $file\n";
         }
         
-        // Ensure file starts with <?php (no whitespace before)
-        if (preg_match('/^\s*<\?php/', $content)) {
-            $content = preg_replace('/^\s+/', '', $content);
+        // Remove any whitespace before <?php
+        $content = ltrim($content);
+        
+        // Ensure file starts with <?php exactly
+        if (!str_starts_with($content, '<?php')) {
+            echo "Warning: $file does not start with <?php\n";
+        } else {
+            // Save cleaned content
             file_put_contents($file, $content);
-            echo "Removed leading whitespace from: $file\n";
+            echo "Cleaned: $file\n";
         }
     }
 }

@@ -12,17 +12,20 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
+// Ensure session save path is writable (Railway)
+$session_path = sys_get_temp_dir();
+if (is_writable($session_path)) {
+    ini_set('session.save_path', $session_path);
+}
+
 session_start();
 require_once 'config/database.php';
 
-// If GET request or not AJAX POST, handle redirect
+// If GET request, redirect to home
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Location: home.php');
     exit();
 }
-
-// Check if this is a regular form POST (not AJAX)
-$is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
 // Handle forgot password
 if (isset($_POST['forgot_password'])) {
@@ -112,26 +115,17 @@ if (empty($username) || empty($password)) {
             error_log("Login - Cookies received: " . json_encode($_COOKIE ?? []));
             error_log("Login - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
             
-            // Session will be automatically written when script ends
-            // PHP will send Set-Cookie header automatically
+            // PHP will automatically write session and send Set-Cookie header when script ends
             
-            // Handle response based on request type
+            // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';
-            
-            if ($is_ajax) {
-                // AJAX request - return JSON
-                $response = [
-                    'success' => true,
-                    'redirect' => $redirect_url,
-                    'role' => $user_role,
-                    'username' => $user['username'],
-                    'session_id' => $session_id
-                ];
-            } else {
-                // Regular form POST - redirect directly (session cookie will be sent)
-                header('Location: ' . $redirect_url);
-                exit();
-            }
+            $response = [
+                'success' => true,
+                'redirect' => $redirect_url,
+                'role' => $user_role,
+                'username' => $user['username'],
+                'session_id' => $session_id // Include for debugging
+            ];
         } else {
             $response = ['success' => false, 'error' => 'Invalid username or password.'];
         }
@@ -140,23 +134,12 @@ if (empty($username) || empty($password)) {
     }
 }
 
-// Set headers and send response
-if ($is_ajax) {
-    // AJAX request - return JSON
-    if (!headers_sent()) {
-        header('Content-Type: application/json');
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Pragma: no-cache');
-    }
-    echo json_encode($response);
-} else {
-    // Regular form POST - should have redirected already, but fallback for errors
-    if (isset($response) && !$response['success']) {
-        // Error case - redirect back to home with error
-        header('Location: home.php?error=' . urlencode($response['error'] ?? 'Login failed'));
-    } else {
-        // Should not reach here if login succeeded
-        header('Location: home.php');
-    }
+// Set headers AFTER setting cookies
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Pragma: no-cache');
 }
+
+echo json_encode($response);
 exit();

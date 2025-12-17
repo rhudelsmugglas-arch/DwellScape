@@ -12,6 +12,12 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
+// Ensure session save path is writable (Railway) - must match login.php
+$session_path = sys_get_temp_dir();
+if (is_writable($session_path)) {
+    ini_set('session.save_path', $session_path);
+}
+
 if (!ob_get_level()) ob_start();
 session_start();
 require_once 'config/database.php';
