@@ -28,7 +28,14 @@ if (ob_get_length() > 0) {
 }
 
 // Start session (suppress all warnings)
-@session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+
+// Verify session started
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    error_log("ERROR: Session failed to start in dashboard.php");
+}
 
 // Debug: Log session status (remove in production)
 error_log("Dashboard - Session ID: " . session_id());

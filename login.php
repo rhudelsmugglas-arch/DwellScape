@@ -28,7 +28,15 @@ if (ob_get_length() > 0) {
 }
 
 // Start session (suppress all warnings)
-@session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+
+// Verify session started
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    error_log("ERROR: Session failed to start in login.php");
+}
+
 require_once 'config/database.php';
 
 $error_message = '';
@@ -161,7 +169,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['forgot_password'])) {
                 $_SESSION['is_admin'] = ($user_role === 'admin');
                 
                 // Force session write to ensure it's saved
-                session_regenerate_id(true); // Regenerate ID for security and ensure cookie is sent
+                // Only regenerate if session is active
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    @session_regenerate_id(true); // Regenerate ID for security and ensure cookie is sent
+                }
                 
                 // Debug: Log session status (remove in production)
                 error_log("Login - Session ID: " . session_id());
