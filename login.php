@@ -1,4 +1,9 @@
 ﻿<?php
+// Start output buffering FIRST to catch any BOM/whitespace
+if (!ob_get_level()) {
+    ob_start();
+}
+
 // Configure session cookie parameters BEFORE session_start()
 // Detect HTTPS (Railway uses HTTPS, but check headers for proxy)
 $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 

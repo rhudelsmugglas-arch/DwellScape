@@ -1,4 +1,9 @@
 <?php
+// Start output buffering FIRST to catch any BOM/whitespace
+if (!ob_get_level()) {
+    ob_start();
+}
+
 // Configure session cookie parameters BEFORE session_start()
 // Detect HTTPS (Railway uses HTTPS, but check headers for proxy)
 $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
@@ -12,13 +17,15 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
+// Load database first
 require_once 'config/database.php';
-require_once 'config/session_handler.php';
 
-// Use database session handler (must match login.php and dashboard.php)
+// Set up database session handler BEFORE any output
+require_once 'config/session_handler.php';
 $session_handler = new DatabaseSessionHandler($pdo);
 session_set_save_handler($session_handler, true);
 
+// Start session
 session_start();
 
 // Check if user is logged in
