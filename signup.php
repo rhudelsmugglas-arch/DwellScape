@@ -111,14 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             exit();
                         }
                         
-                        // Redirect to login page with success message
+                        // Redirect to home page with success message (will show login modal)
                         $_SESSION['signup_success'] = 'Account created successfully! You can now login.';
                         if (!headers_sent()) {
-                            header('Location: login.php');
+                            header('Location: home.php');
                             exit();
                         } else {
                             // Fallback: Use JavaScript redirect if headers already sent
-                            echo '<script>window.location.href = "login.php";</script>';
+                            echo '<script>window.location.href = "home.php";</script>';
                             exit();
                         }
                     }
@@ -509,7 +509,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
 
         <div class="auth-links">
-            <a href="login.php">Already have an account? <strong>Sign in</strong></a>
+            <a href="home.php">Already have an account? <strong>Sign in</strong></a>
         </div>
     </div>
 

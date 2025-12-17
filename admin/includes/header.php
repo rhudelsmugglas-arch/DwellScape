@@ -9,10 +9,15 @@ if (isset($_POST['logout'])) {
     exit();
 }
 
-// Redirect if not logged in
+// Redirect if not logged in - go to home page (which has login modal)
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login.php');
-    exit();
+    if (!headers_sent()) {
+        header('Location: ../home.php');
+        exit();
+    } else {
+        echo '<script>window.location.href = "../home.php";</script>';
+        exit();
+    }
 }
 
 // Check if user is admin (check both role and is_admin for compatibility)

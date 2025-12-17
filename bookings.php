@@ -3,8 +3,13 @@ session_start();
 require_once 'config/database.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+    if (!headers_sent()) {
+        header('Location: home.php');
+        exit();
+    } else {
+        echo '<script>window.location.href = "home.php";</script>';
+        exit();
+    }
 }
 
 // Get user data from database

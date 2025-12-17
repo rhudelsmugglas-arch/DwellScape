@@ -47,14 +47,14 @@ error_log("Dashboard - Session cookie exists: " . (isset($_COOKIE[session_name()
 
 require_once 'config/database.php';
 
-// Redirect if not logged in
+// Redirect if not logged in - go to home page (which has login modal)
 if (!isset($_SESSION['user_id'])) {
     if (!headers_sent()) {
-        header('Location: login.php');
+        header('Location: home.php');
         exit();
     } else {
         // Fallback: Use JavaScript redirect if headers already sent
-        echo '<script>window.location.href = "login.php";</script>';
+        echo '<script>window.location.href = "home.php";</script>';
         exit();
     }
 }

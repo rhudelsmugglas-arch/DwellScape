@@ -48,7 +48,7 @@ if (isset($_SESSION['signup_success'])) {
     unset($_SESSION['signup_success']); // Clear the message after displaying
 }
 
-// Redirect if already logged in
+// Redirect if already logged in - always go to dashboard (or admin panel)
 if (isset($_SESSION['user_id'])) {
     // Check user role and redirect accordingly
     if (!headers_sent()) {
@@ -62,6 +62,18 @@ if (isset($_SESSION['user_id'])) {
         // Fallback: Use JavaScript redirect if headers already sent
         $redirect_url = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') ? 'admin/admin.php' : 'dashboard.php';
         echo '<script>window.location.href = "' . htmlspecialchars($redirect_url) . '";</script>';
+        exit();
+    }
+}
+
+// If accessed directly (not via AJAX), redirect to home page
+// login.php should only be used as an API endpoint for AJAX requests
+if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    if (!headers_sent()) {
+        header('Location: home.php');
+        exit();
+    } else {
+        echo '<script>window.location.href = "home.php";</script>';
         exit();
     }
 }
