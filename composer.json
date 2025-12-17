@@ -1,0 +1,13 @@
+{
+    "name": "dwellscape/email-notifications",
+    "description": "Email notification system for Dwellscape Staycation",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dwellscape\\": "src/"
+        }
+    }
+}
+
