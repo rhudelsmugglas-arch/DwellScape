@@ -13,6 +13,19 @@ if (ob_get_length() > 0) {
     ob_clean();
 }
 
+// Configure session settings for Railway
+ini_set('session.cookie_httponly', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
+
+// Set session save path to a writable directory (Railway might not have /tmp)
+$session_path = sys_get_temp_dir();
+if (is_writable($session_path)) {
+    ini_set('session.save_path', $session_path);
+}
+
 // Start session (suppress warning if headers already sent, but try to prevent it)
 if (!headers_sent()) {
     session_start();
@@ -150,6 +163,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['forgot_password'])) {
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['role'] = $user_role;
                 $_SESSION['is_admin'] = ($user_role === 'admin');
+                
+                // Debug: Log session status (remove in production)
+                error_log("Login - Session ID: " . session_id());
+                error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
+                error_log("Login - Session save path: " . ini_get('session.save_path'));
                 
                 // Check if AJAX request (from modal)
                 // Check multiple ways to detect AJAX request

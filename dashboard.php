@@ -13,6 +13,19 @@ if (ob_get_length() > 0) {
     ob_clean();
 }
 
+// Configure session settings for Railway
+ini_set('session.cookie_httponly', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
+
+// Set session save path to a writable directory (Railway might not have /tmp)
+$session_path = sys_get_temp_dir();
+if (is_writable($session_path)) {
+    ini_set('session.save_path', $session_path);
+}
+
 // Start session (suppress warning if headers already sent, but try to prevent it)
 if (!headers_sent()) {
     session_start();
@@ -20,6 +33,11 @@ if (!headers_sent()) {
     // If headers already sent, try to start session anyway
     @session_start();
 }
+
+// Debug: Log session status (remove in production)
+error_log("Dashboard - Session ID: " . session_id());
+error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
+error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
 
 require_once 'config/database.php';
 
