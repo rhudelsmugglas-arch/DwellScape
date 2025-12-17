@@ -24,12 +24,26 @@ require_once 'config/session_handler.php';
 $session_handler = new DatabaseSessionHandler($pdo);
 session_set_save_handler($session_handler, true);
 
-// Start session
-session_start();
+// Start session with error suppression
+@session_start();
+
+$session_status = session_status();
+$session_id = session_id();
 
 error_log("Login - Session started using database handler");
-error_log("Login - Session ID: " . session_id());
-error_log("Login - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
+error_log("Login - Session ID: " . ($session_id ?: 'EMPTY'));
+error_log("Login - Session status: " . $session_status . " (2=PHP_SESSION_ACTIVE)");
+
+if ($session_status !== PHP_SESSION_ACTIVE) {
+    error_log("Login - WARNING: Session status is " . $session_status . " - may indicate headers already sent or session disabled");
+    // Try to start again
+    if (!headers_sent()) {
+        @session_start();
+        error_log("Login - Retry session_start(), status now: " . session_status());
+    } else {
+        error_log("Login - ERROR: Headers already sent, cannot start session!");
+    }
+}
 
 // If GET request, redirect to home
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -101,38 +115,38 @@ if (empty($username) || empty($password)) {
                 // Ignore update error
             }
             
-            // Verify session is active before setting data
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                error_log("Login - ERROR: Session not active before setting data! Status: " . session_status());
-                session_start();
-                error_log("Login - Session restarted, status: " . session_status());
-            }
-            
-            // Ensure session is active before setting data
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                error_log("Login - Session not active before setting data, starting...");
-                session_start();
-            }
-            
-            // Set session data
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['email'] = $user['email'];
-            $_SESSION['role'] = $user_role;
-            $_SESSION['is_admin'] = $is_admin;
-            
-            // Get session ID (must exist now)
-            $session_id = session_id();
-            if (empty($session_id)) {
-                error_log("Login - ERROR: Session ID is empty after setting data!");
-                // Generate a session ID if it doesn't exist
-                if (function_exists('session_create_id')) {
-                    $session_id = session_create_id();
-                    session_id($session_id);
-                    session_start();
+            // CRITICAL: Session MUST be active for $_SESSION to work
+            // If session isn't active, $_SESSION array won't serialize properly
+            $current_status = session_status();
+            if ($current_status !== PHP_SESSION_ACTIVE) {
+                error_log("Login - CRITICAL: Session not active! Status: " . $current_status);
+                error_log("Login - Headers sent: " . (headers_sent() ? 'YES' : 'NO'));
+                
+                // Try to start session
+                if (!headers_sent()) {
+                    @session_start();
+                    $current_status = session_status();
+                    error_log("Login - After retry, session status: " . $current_status);
+                } else {
+                    error_log("Login - Cannot start session - headers already sent!");
                 }
             }
             
+            // Set session data ONLY if session is active
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['role'] = $user_role;
+                $_SESSION['is_admin'] = $is_admin;
+                
+                error_log("Login - Session data set successfully");
+            } else {
+                error_log("Login - CRITICAL: Cannot set session data - session not active!");
+            }
+            
+            // Get session info
+            $session_id = session_id();
             $session_name = session_name();
             $cookie_params = session_get_cookie_params();
             
@@ -142,22 +156,8 @@ if (empty($username) || empty($password)) {
             error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
             error_log("Login - All session data: " . json_encode($_SESSION ?? []));
             
-            // Force session write to database
-            if ($session_id) {
-                session_write_close();
-                error_log("Login - Session written to database, ID: " . $session_id);
-                
-                // Restart session with same ID
-                session_id($session_id);
-                session_start();
-                
-                // Verify data was read back
-                error_log("Login - After restart - Session ID: " . session_id());
-                error_log("Login - After restart - User ID: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
-                error_log("Login - After restart - Session data: " . json_encode($_SESSION ?? []));
-            } else {
-                error_log("Login - CRITICAL: Cannot write session - no session ID!");
-            }
+            // PHP will automatically write session when script ends
+            // The session handler will serialize $_SESSION and write to database
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';
