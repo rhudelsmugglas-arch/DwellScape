@@ -1,4 +1,12 @@
 <?php
+// Configure session cookie parameters BEFORE session_start()
+// Must match login.php configuration
+ini_set('session.cookie_httponly', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_secure', '1'); // HTTPS on Railway
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_path', '/');
+
 if (!ob_get_level()) ob_start();
 session_start();
 require_once 'config/database.php';

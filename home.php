@@ -1,4 +1,12 @@
 <?php
+// Configure session cookie parameters BEFORE session_start()
+// Must match login.php and dashboard.php configuration
+ini_set('session.cookie_httponly', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_secure', '1'); // HTTPS on Railway
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_path', '/');
+
 session_start();
 require_once 'config/database.php';
 
@@ -1531,6 +1539,7 @@ if (isset($_POST['logout'])) {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', 'login.php', true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.withCredentials = true; // Ensure cookies are sent with AJAX request
             xhr.onload = function() {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Sign In';
@@ -1548,10 +1557,12 @@ if (isset($_POST['logout'])) {
                                 redirectUrl = 'dashboard.php';
                             }
                             console.log('Login successful, redirecting to:', redirectUrl);
-                            // Small delay to ensure session cookie is set
+                            console.log('Session cookie should be set, waiting before redirect...');
+                            // Longer delay to ensure session cookie is set and browser processes it
                             setTimeout(function() {
+                                // Force reload to ensure cookies are sent
                                 window.location.href = redirectUrl;
-                            }, 100);
+                            }, 500);
                         } else {
                             // Show error message - no redirect
                             errorDiv.textContent = response.error || 'Invalid username or password.';

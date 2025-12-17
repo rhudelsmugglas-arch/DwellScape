@@ -1,4 +1,12 @@
 ﻿<?php
+// Configure session cookie parameters BEFORE session_start()
+// Railway uses HTTPS, so we need to configure cookies properly
+ini_set('session.cookie_httponly', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_secure', '1'); // HTTPS on Railway
+ini_set('session.cookie_samesite', 'Lax');
+ini_set('session.cookie_path', '/');
+
 session_start();
 require_once 'config/database.php';
 
@@ -79,13 +87,14 @@ if (empty($username) || empty($password)) {
             $_SESSION['role'] = $user_role;
             $_SESSION['is_admin'] = $is_admin;
             
-            // Ensure session is saved and cookie is sent
+            // Regenerate session ID for security (this also saves the session)
             session_regenerate_id(true);
             
             // Debug: Log session status (remove after testing)
             error_log("Login - Session ID: " . session_id());
             error_log("Login - User ID set: " . $_SESSION['user_id']);
             error_log("Login - Session cookie params: " . json_encode(session_get_cookie_params()));
+            error_log("Login - Cookies being sent: " . json_encode($_COOKIE ?? []));
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';
