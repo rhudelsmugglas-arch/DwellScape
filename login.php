@@ -14,11 +14,48 @@ ini_set('session.cookie_domain', ''); // Empty for current domain
 
 // Ensure session save path is writable (Railway)
 $session_path = sys_get_temp_dir();
+error_log("Login - sys_get_temp_dir() returned: " . $session_path);
+error_log("Login - Session path writable: " . (is_writable($session_path) ? 'YES' : 'NO'));
+
 if (is_writable($session_path)) {
     ini_set('session.save_path', $session_path);
+    error_log("Login - Setting session save path to: " . $session_path);
+    error_log("Login - Session save path after ini_set: " . ini_get('session.save_path'));
+} else {
+    // Try alternative paths
+    $alt_paths = ['/tmp', '/var/tmp', '/app/tmp'];
+    foreach ($alt_paths as $alt_path) {
+        if (is_dir($alt_path) && is_writable($alt_path)) {
+            ini_set('session.save_path', $alt_path);
+            error_log("Login - Using alternative session path: " . $alt_path);
+            break;
+        }
+    }
+    error_log("Login - WARNING: Default session path not writable: " . $session_path);
+    error_log("Login - Final session save path: " . ini_get('session.save_path'));
 }
 
-session_start();
+// Start session and verify it started
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+    error_log("Login - Session started, status: " . session_status() . " (should be 2)");
+} else {
+    error_log("Login - Session already active");
+}
+
+// Verify session is active
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    error_log("Login - ERROR: Session failed to start! Trying again...");
+    @session_start(); // Try again with error suppression
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        error_log("Login - CRITICAL: Session still not active after retry!");
+    }
+}
+
+error_log("Login - Session ID after start: " . (session_id() ?: 'EMPTY'));
+error_log("Login - Session save path after start: " . ini_get('session.save_path'));
+error_log("Login - Final session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
+
 require_once 'config/database.php';
 
 // If GET request, redirect to home
@@ -91,6 +128,13 @@ if (empty($username) || empty($password)) {
                 // Ignore update error
             }
             
+            // Verify session is active before setting data
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                error_log("Login - ERROR: Session not active before setting data! Status: " . session_status());
+                session_start();
+                error_log("Login - Session restarted, status: " . session_status());
+            }
+            
             // Set session data
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
@@ -106,10 +150,15 @@ if (empty($username) || empty($password)) {
             // Don't regenerate ID - just set the data and let PHP save it
             // Regenerating can cause issues with session file writing on Railway
             
-            // Debug: Log session status BEFORE writing
+            // Debug: Log session status AFTER setting data
             error_log("Login - Session ID: " . ($session_id ?: 'EMPTY'));
             error_log("Login - Session name: " . $session_name);
             error_log("Login - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
+            
+            // Verify data was set
+            if (!isset($_SESSION['user_id'])) {
+                error_log("Login - CRITICAL ERROR: Session data not set!");
+            }
             error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
             error_log("Login - All session data: " . json_encode($_SESSION ?? []));
             error_log("Login - Session cookie params: " . json_encode($cookie_params));
