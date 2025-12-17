@@ -1572,9 +1572,14 @@ if (isset($_POST['logout'])) {
                                 const expires = new Date(response.auth_expires * 1000);
                                 const isSecure = window.location.protocol === 'https:';
                                 
-                                // Set cookie via JavaScript
-                                document.cookie = `auth_token=${response.auth_token}; expires=${expires.toUTCString()}; path=/; ${isSecure ? 'secure; ' : ''}SameSite=Lax`;
-                                console.log('Cookie set via JavaScript');
+                                // Set cookie via JavaScript (cannot be HttpOnly when set via JS)
+                                // Note: HttpOnly cookies cannot be set via JavaScript, so this is less secure
+                                // but necessary when PHP headers are already sent
+                                const cookieString = `auth_token=${response.auth_token}; expires=${expires.toUTCString()}; path=/; ${isSecure ? 'secure; ' : ''}SameSite=Lax`;
+                                document.cookie = cookieString;
+                                console.log('Cookie set via JavaScript:', cookieString);
+                                console.log('Cookie expires:', expires.toUTCString());
+                                console.log('All cookies after setting:', document.cookie);
                             }
                             
                             // Use the redirect URL from response, or determine based on role
@@ -1586,11 +1591,27 @@ if (isset($_POST['logout'])) {
                             }
                             console.log('Login successful, redirecting to:', redirectUrl);
                             
-                            // Small delay to ensure cookie is processed by browser
+                            // Longer delay to ensure cookie is processed by browser
+                            // Cookies set via JavaScript need time to be stored
                             setTimeout(function() {
+                                // Verify cookie was set before redirecting
+                                const cookies = document.cookie;
+                                console.log('Cookies before redirect:', cookies);
+                                
+                                if (cookies.indexOf('auth_token=') === -1) {
+                                    console.error('WARNING: auth_token cookie not found!');
+                                    // Try setting again
+                                    if (response.auth_token) {
+                                        const expires = new Date(response.auth_expires * 1000);
+                                        const isSecure = window.location.protocol === 'https:';
+                                        document.cookie = `auth_token=${response.auth_token}; expires=${expires.toUTCString()}; path=/; ${isSecure ? 'secure; ' : ''}SameSite=Lax`;
+                                        console.log('Retried setting cookie');
+                                    }
+                                }
+                                
                                 // Use window.location.href for full page reload with cookies
                                 window.location.href = redirectUrl;
-                            }, 100);
+                            }, 300); // Increased delay to 300ms
                         } else {
                             // Show error message - no redirect
                             errorDiv.textContent = response.error || 'Invalid username or password.';

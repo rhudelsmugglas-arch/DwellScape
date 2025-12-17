@@ -1,12 +1,20 @@
 ﻿<?php
 // Use cookie-based authentication instead of sessions
-// Start output buffering to prevent headers from being sent
+// Start output buffering FIRST to catch any BOM/whitespace
 if (!ob_get_level()) {
     ob_start();
+} else {
+    ob_clean(); // Clean any existing output
 }
+
+// Clean output buffer before requiring files (in case they have output)
+ob_clean();
 
 require_once 'config/database.php';
 require_once 'config/auth.php';
+
+// Clean output buffer again after includes (in case they had output)
+ob_clean();
 
 // If GET request, redirect to home
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
