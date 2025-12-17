@@ -1547,11 +1547,17 @@ if (isset($_POST['logout'])) {
                             } else if (!redirectUrl) {
                                 redirectUrl = 'dashboard.php';
                             }
-                            console.log('Redirecting to:', redirectUrl); // Debug log
-                            window.location.href = redirectUrl;
+                            console.log('Login successful, redirecting to:', redirectUrl);
+                            // Small delay to ensure session cookie is set
+                            setTimeout(function() {
+                                window.location.href = redirectUrl;
+                            }, 100);
                         } else {
+                            // Show error message - no redirect
                             errorDiv.textContent = response.error || 'Invalid username or password.';
                             errorDiv.style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Sign In';
                         }
                     } catch (e) {
                         console.error('JSON parse error:', e, 'Response:', xhr.responseText); // Debug log

@@ -3,8 +3,15 @@ if (!ob_get_level()) ob_start();
 session_start();
 require_once 'config/database.php';
 
+// Debug: Check session (remove after testing)
+error_log("Dashboard - Session ID: " . session_id());
+error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
+error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
+error_log("Dashboard - Cookies received: " . json_encode($_COOKIE ?? []));
+
 // Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
+    error_log("Dashboard - User not logged in, redirecting to home.php");
     header('Location: home.php');
     exit();
 }
