@@ -66,9 +66,9 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-// If accessed directly (not via AJAX), redirect to home page
-// login.php should only be used as an API endpoint for AJAX requests
-if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+// If accessed directly via GET (not POST/AJAX), redirect to home page
+// login.php should only be used as an API endpoint for AJAX POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (!headers_sent()) {
         header('Location: home.php');
         exit();
