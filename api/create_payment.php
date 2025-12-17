@@ -1,11 +1,15 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors, but log them
-session_start();
+// Use cookie-based authentication instead of sessions
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/auth.php';
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit();
@@ -40,7 +44,7 @@ require_once __DIR__ . '/../config/database.php';
 // Get user information for pre-filling checkout form
 try {
     $stmt = $pdo->prepare("SELECT email, first_name, middle_initial, last_name, username FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$current_user['user_id']]);
     $user = $stmt->fetch();
     
     $user_email = trim($user['email'] ?? '');
@@ -62,13 +66,13 @@ try {
     }
     
     // Ensure we have at least email (should always be present for logged-in users)
-    if (empty($user_email) && isset($_SESSION['email'])) {
-        $user_email = trim($_SESSION['email']);
+    if (empty($user_email) && isset($current_user['email'])) {
+        $user_email = trim($current_user['email']);
     }
     
     // If still no email, log warning but continue
     if (empty($user_email)) {
-        error_log("Warning: No email found for user ID: " . $_SESSION['user_id']);
+        error_log("Warning: No email found for user ID: " . $current_user['user_id']);
         error_log("User data from database: " . json_encode($user));
     }
     
@@ -145,7 +149,7 @@ $payment_link_attributes = [
         'checkin' => (string)$booking_data['checkin'],
         'checkout' => (string)$booking_data['checkout'],
         'nights' => (string)$booking_data['nights'],
-        'user_id' => (string)$_SESSION['user_id']
+        'user_id' => (string)$current_user['user_id']
     ]
 ];
 

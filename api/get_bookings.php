@@ -1,9 +1,13 @@
 <?php
-session_start();
+// Use cookie-based authentication instead of sessions
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/auth.php';
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user_id'])) {
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit();
@@ -29,7 +33,7 @@ try {
         ORDER BY b.created_at DESC
     ");
     
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$current_user['user_id']]);
     $bookings = $stmt->fetchAll();
     
     // Format bookings for frontend
