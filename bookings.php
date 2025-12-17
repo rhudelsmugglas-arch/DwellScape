@@ -3250,6 +3250,10 @@ if (isset($_POST['logout'])) {
             roomsSection.classList.add('active');
             
             try {
+                // Debug: Check if cookies are available
+                console.log('Cookies before API call:', document.cookie);
+                console.log('Auth token cookie exists:', document.cookie.indexOf('auth_token=') !== -1);
+                
                 // Fetch available rooms from API
                 const response = await fetch('api/get_available_rooms.php', {
                     method: 'POST',
@@ -3263,7 +3267,31 @@ if (isset($_POST['logout'])) {
                     })
                 });
                 
+                console.log('Rooms API Response Status:', response.status);
+                console.log('Rooms API Response Headers:', response.headers);
+                
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error Response:', errorText);
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: errorText || 'Unknown error' };
+                    }
+                    
+                    if (response.status === 401) {
+                        roomsGrid.innerHTML = '<div class="no-rooms"><p>Authentication failed. Please <a href="home.php">log in again</a>.</p></div>';
+                    } else {
+                        roomsGrid.innerHTML = '<div class="no-rooms"><p>Error loading rooms: ' + (errorData.error || 'Please try again') + '</p></div>';
+                    }
+                    rooms = [];
+                    return;
+                }
+                
                 const result = await response.json();
+                console.log('Rooms API Result:', result);
                 
                 // Clear existing rooms
                 roomsGrid.innerHTML = '';
@@ -3284,7 +3312,8 @@ if (isset($_POST['logout'])) {
                 }
             } catch (error) {
                 console.error('Error fetching rooms:', error);
-                roomsGrid.innerHTML = '<div class="no-rooms"><p>Error loading rooms. Please try again.</p></div>';
+                console.error('Error details:', error.message, error.stack);
+                roomsGrid.innerHTML = '<div class="no-rooms"><p>Error loading rooms: ' + error.message + '. Please try again.</p></div>';
                 rooms = [];
             }
             
