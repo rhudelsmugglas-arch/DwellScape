@@ -20,17 +20,42 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
     global $pdo;
     
     try {
+        // Ensure table exists (create if it doesn't)
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS auth_tokens (
+                    user_id INT UNSIGNED NOT NULL,
+                    token VARCHAR(64) PRIMARY KEY,
+                    expires_at DATETIME NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    last_used DATETIME NULL,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_expires_at (expires_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+        } catch(PDOException $e) {
+            error_log("Auth - Table creation failed: " . $e->getMessage());
+            // Continue anyway - table might already exist
+        }
+        
         // Generate token
         $token = generateAuthToken();
         $expires = time() + (30 * 24 * 60 * 60); // 30 days
+        
+        // Delete any existing tokens for this user first
+        try {
+            $delete_stmt = $pdo->prepare("DELETE FROM auth_tokens WHERE user_id = ?");
+            $delete_stmt->execute([$user_id]);
+        } catch(PDOException $e) {
+            // Ignore if table doesn't exist yet
+        }
         
         // Store token in database
         $stmt = $pdo->prepare("
             INSERT INTO auth_tokens (user_id, token, expires_at, created_at) 
             VALUES (?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE token = ?, expires_at = ?, created_at = NOW()
         ");
-        $stmt->execute([$user_id, $token, date('Y-m-d H:i:s', $expires), $token, date('Y-m-d H:i:s', $expires)]);
+        $stmt->execute([$user_id, $token, date('Y-m-d H:i:s', $expires)]);
         
         // Detect HTTPS
         $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
@@ -151,6 +176,8 @@ function isAdmin() {
 }
 
 // Create auth_tokens table if it doesn't exist
+// This MUST run when the file is included
+// Try without foreign key first (more reliable)
 try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS auth_tokens (
@@ -160,11 +187,12 @@ try {
             created_at DATETIME NOT NULL,
             last_used DATETIME NULL,
             INDEX idx_user_id (user_id),
-            INDEX idx_expires_at (expires_at),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            INDEX idx_expires_at (expires_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
+    error_log("Auth - auth_tokens table created/verified successfully");
 } catch(PDOException $e) {
-    // Table might already exist, ignore
+    error_log("Auth - CRITICAL: Failed to create auth_tokens table: " . $e->getMessage());
+    // Table creation failed - functions will try to create it when needed
 }
 
