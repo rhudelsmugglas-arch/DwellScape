@@ -1,6 +1,9 @@
 ﻿<?php
 // Use cookie-based authentication instead of sessions
-// No need for output buffering or session configuration
+// Start output buffering to prevent headers from being sent
+if (!ob_get_level()) {
+    ob_start();
+}
 
 require_once 'config/database.php';
 require_once 'config/auth.php';
@@ -76,10 +79,13 @@ if (empty($username) || empty($password)) {
             }
             
             // Use cookie-based authentication instead of sessions
-            $auth_set = setAuthCookie($user['id'], $user['username'], $user['email'], $user_role, $is_admin);
+            $auth_result = setAuthCookie($user['id'], $user['username'], $user['email'], $user_role, $is_admin);
             
-            if ($auth_set) {
+            if ($auth_result === true) {
                 error_log("Login - Auth cookie set successfully for user: " . $user['username']);
+            } elseif (is_array($auth_result) && isset($auth_result['set_via_js'])) {
+                // Cookie needs to be set via JavaScript (headers already sent)
+                error_log("Login - Cookie will be set via JavaScript");
             } else {
                 error_log("Login - WARNING: Failed to set auth cookie");
             }
@@ -92,6 +98,12 @@ if (empty($username) || empty($password)) {
                 'role' => $user_role,
                 'username' => $user['username']
             ];
+            
+            // If cookie needs to be set via JS, include token in response
+            if (is_array($auth_result) && isset($auth_result['set_via_js'])) {
+                $response['auth_token'] = $auth_result['token'];
+                $response['auth_expires'] = $auth_result['expires'];
+            }
         } else {
             $response = ['success' => false, 'error' => 'Invalid username or password.'];
         }

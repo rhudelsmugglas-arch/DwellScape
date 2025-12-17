@@ -1567,6 +1567,16 @@ if (isset($_POST['logout'])) {
                         const response = JSON.parse(xhr.responseText);
                         console.log('Login response:', response); // Debug log
                         if (response.success) {
+                            // If cookie needs to be set via JavaScript (headers already sent)
+                            if (response.auth_token) {
+                                const expires = new Date(response.auth_expires * 1000);
+                                const isSecure = window.location.protocol === 'https:';
+                                
+                                // Set cookie via JavaScript
+                                document.cookie = `auth_token=${response.auth_token}; expires=${expires.toUTCString()}; path=/; ${isSecure ? 'secure; ' : ''}SameSite=Lax`;
+                                console.log('Cookie set via JavaScript');
+                            }
+                            
                             // Use the redirect URL from response, or determine based on role
                             let redirectUrl = response.redirect;
                             if (!redirectUrl && response.role === 'admin') {
@@ -1575,10 +1585,8 @@ if (isset($_POST['logout'])) {
                                 redirectUrl = 'dashboard.php';
                             }
                             console.log('Login successful, redirecting to:', redirectUrl);
-                            console.log('Session ID from server:', response.session_id);
                             
                             // Small delay to ensure cookie is processed by browser
-                            // Cookies set via AJAX need a moment to be available
                             setTimeout(function() {
                                 // Use window.location.href for full page reload with cookies
                                 window.location.href = redirectUrl;

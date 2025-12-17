@@ -62,7 +62,14 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
                    (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
                    (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
         
-        // Set secure cookie
+        // Check if headers are sent before setting cookie
+        $headers_sent = headers_sent($file, $line);
+        if ($headers_sent) {
+            error_log("Auth - WARNING: Headers already sent from $file:$line - cannot set cookie!");
+            // Return token so it can be set via JavaScript
+            return ['token' => $token, 'expires' => $expires, 'set_via_js' => true];
+        }
+        
         // Use SameSite=None for cross-site requests, or Lax for same-site
         $same_site = 'Lax'; // Use Lax for same-site requests (better security)
         
@@ -77,6 +84,7 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
         ]);
         
         error_log("Auth - Cookie set result: " . ($cookie_set ? 'SUCCESS' : 'FAILED'));
+        error_log("Auth - Headers sent: " . ($headers_sent ? "YES ($file:$line)" : "NO"));
         error_log("Auth - Cookie expires: " . date('Y-m-d H:i:s', $expires));
         error_log("Auth - Cookie secure: " . ($is_https ? 'YES' : 'NO'));
         error_log("Auth - Cookie path: /");
