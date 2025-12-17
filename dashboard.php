@@ -12,25 +12,26 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
-// Ensure session save path is writable (Railway) - must match login.php EXACTLY
+// Set session save path BEFORE session_start() using session_save_path() function
+// Must match login.php EXACTLY
 $session_path = sys_get_temp_dir();
 error_log("Dashboard - sys_get_temp_dir() returned: " . $session_path);
 
 if (is_writable($session_path)) {
-    ini_set('session.save_path', $session_path);
+    session_save_path($session_path);
     error_log("Dashboard - Setting session save path to: " . $session_path);
 } else {
     // Try alternative paths (must match login.php)
     $alt_paths = ['/tmp', '/var/tmp', '/app/tmp'];
     foreach ($alt_paths as $alt_path) {
         if (is_dir($alt_path) && is_writable($alt_path)) {
-            ini_set('session.save_path', $alt_path);
+            session_save_path($alt_path);
             error_log("Dashboard - Using alternative session path: " . $alt_path);
             break;
         }
     }
 }
-error_log("Dashboard - Final session save path: " . ini_get('session.save_path'));
+error_log("Dashboard - Final session save path: " . session_save_path());
 
 if (!ob_get_level()) ob_start();
 session_start();
