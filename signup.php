@@ -1,5 +1,26 @@
 ﻿<?php
-session_start();
+// Ensure output buffering is enabled at server level
+ini_set('output_buffering', 'On');
+ini_set('implicit_flush', 'Off');
+
+// Start output buffering if not already started
+if (!ob_get_level()) {
+    ob_start();
+}
+
+// Clear any existing output that might have been sent
+if (ob_get_length() > 0) {
+    ob_clean();
+}
+
+// Start session (suppress warning if headers already sent, but try to prevent it)
+if (!headers_sent()) {
+    session_start();
+} else {
+    // If headers already sent, try to start session anyway
+    @session_start();
+}
+
 require_once 'config/database.php';
 
 $error_message = '';
@@ -7,8 +28,14 @@ $success_message = '';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
-    exit();
+    if (!headers_sent()) {
+        header('Location: dashboard.php');
+        exit();
+    } else {
+        // Fallback: Use JavaScript redirect if headers already sent
+        echo '<script>window.location.href = "dashboard.php";</script>';
+        exit();
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -77,15 +104,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         
                         // Check if AJAX request (from modal)
                         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-                            header('Content-Type: application/json');
+                            if (!headers_sent()) {
+                                header('Content-Type: application/json');
+                            }
                             echo json_encode(['success' => true, 'message' => 'Account created successfully! You can now login.']);
                             exit();
                         }
                         
                         // Redirect to login page with success message
                         $_SESSION['signup_success'] = 'Account created successfully! You can now login.';
-                        header('Location: login.php');
-                        exit();
+                        if (!headers_sent()) {
+                            header('Location: login.php');
+                            exit();
+                        } else {
+                            // Fallback: Use JavaScript redirect if headers already sent
+                            echo '<script>window.location.href = "login.php";</script>';
+                            exit();
+                        }
                     }
                 }
             } catch (PDOException $e) {
@@ -98,7 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // For AJAX requests, return JSON with error details
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-                    header('Content-Type: application/json');
+                    if (!headers_sent()) {
+                        header('Content-Type: application/json');
+                    }
                     echo json_encode([
                         'success' => false, 
                         'error' => 'An error occurred. Please try again.',
@@ -112,7 +149,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     // Check if AJAX request and return JSON error
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && !empty($error_message)) {
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
         echo json_encode(['success' => false, 'error' => $error_message]);
         exit();
     }
