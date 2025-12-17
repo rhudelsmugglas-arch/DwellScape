@@ -85,43 +85,32 @@ if (empty($username) || empty($password)) {
                 // Ignore update error
             }
             
-            // Set session
+            // Set session data
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user_role;
             $_SESSION['is_admin'] = $is_admin;
             
-            // Regenerate session ID for security (this also saves the session)
+            // Regenerate session ID for security (PHP automatically copies session data)
             session_regenerate_id(true);
             
-            // Get session cookie parameters
-            $cookie_params = session_get_cookie_params();
-            $session_name = session_name();
+            // Get session info for debugging
             $session_id = session_id();
+            $session_name = session_name();
+            $cookie_params = session_get_cookie_params();
             
-            // Manually set session cookie to ensure it's sent (fallback)
-            $cookie_secure = $is_https ? true : false;
-            setcookie(
-                $session_name,
-                $session_id,
-                [
-                    'expires' => $cookie_params['lifetime'] ? time() + $cookie_params['lifetime'] : 0,
-                    'path' => $cookie_params['path'],
-                    'domain' => $cookie_params['domain'],
-                    'secure' => $cookie_secure,
-                    'httponly' => $cookie_params['httponly'],
-                    'samesite' => $cookie_params['samesite']
-                ]
-            );
-            
-            // Debug: Log session status (remove after testing)
+            // Debug: Log session status
             error_log("Login - Session ID: " . $session_id);
-            error_log("Login - User ID set: " . $_SESSION['user_id']);
-            error_log("Login - Session cookie params: " . json_encode($cookie_params));
-            error_log("Login - Cookies being sent: " . json_encode($_COOKIE ?? []));
             error_log("Login - Session name: " . $session_name);
+            error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
+            error_log("Login - All session data: " . json_encode($_SESSION ?? []));
+            error_log("Login - Session cookie params: " . json_encode($cookie_params));
+            error_log("Login - Cookies received: " . json_encode($_COOKIE ?? []));
             error_log("Login - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
+            
+            // Session will be automatically written when script ends
+            // PHP will send Set-Cookie header automatically
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';

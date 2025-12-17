@@ -18,9 +18,12 @@ require_once 'config/database.php';
 
 // Debug: Check session (remove after testing)
 error_log("Dashboard - Session ID: " . session_id());
+error_log("Dashboard - Session name: " . session_name());
 error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
 error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
 error_log("Dashboard - Cookies received: " . json_encode($_COOKIE ?? []));
+error_log("Dashboard - Session cookie exists: " . (isset($_COOKIE[session_name()]) ? 'YES (' . $_COOKIE[session_name()] . ')' : 'NO'));
+error_log("Dashboard - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
 
 // Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
