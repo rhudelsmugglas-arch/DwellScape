@@ -1,38 +1,31 @@
 ﻿<?php
-// Ensure output buffering is enabled at server level
-ini_set('output_buffering', 'On');
-ini_set('implicit_flush', 'Off');
-
-// Start output buffering if not already started
-if (!ob_get_level()) {
-    ob_start();
-}
-
-// Clear any existing output that might have been sent
-if (ob_get_length() > 0) {
-    ob_clean();
-}
-
-// Configure session settings for Railway
-ini_set('session.cookie_httponly', '1');
-ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
-ini_set('session.cookie_samesite', 'Lax');
-ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
+// Configure ALL ini settings BEFORE any output or session operations
+@ini_set('output_buffering', 'On');
+@ini_set('implicit_flush', 'Off');
+@ini_set('session.cookie_httponly', '1');
+@ini_set('session.use_only_cookies', '1');
+@ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
+@ini_set('session.cookie_samesite', 'Lax');
+@ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
 
 // Set session save path to a writable directory (Railway might not have /tmp)
 $session_path = sys_get_temp_dir();
 if (is_writable($session_path)) {
-    ini_set('session.save_path', $session_path);
+    @ini_set('session.save_path', $session_path);
 }
 
-// Start session (suppress warning if headers already sent, but try to prevent it)
-if (!headers_sent()) {
-    session_start();
-} else {
-    // If headers already sent, try to start session anyway
-    @session_start();
+// Start output buffering if not already started
+if (!ob_get_level()) {
+    @ob_start();
 }
+
+// Clear any existing output that might have been sent
+if (ob_get_length() > 0) {
+    @ob_clean();
+}
+
+// Start session (suppress all warnings)
+@session_start();
 require_once 'config/database.php';
 
 $error_message = '';
