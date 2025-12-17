@@ -3542,11 +3542,13 @@ if (isset($_POST['logout'])) {
 
             // Check room availability before proceeding
             try {
+                console.log('Checking room availability for room:', roomId);
                 const availabilityResponse = await fetch('api/check_room_availability.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include', // Include cookies for authentication
                     body: JSON.stringify({
                         room_id: roomId.toString(),
                         checkin: checkin,
@@ -3554,7 +3556,37 @@ if (isset($_POST['logout'])) {
                     })
                 });
 
+                console.log('Availability API Response Status:', availabilityResponse.status);
+                
+                // Check if response is OK
+                if (!availabilityResponse.ok) {
+                    const errorText = await availabilityResponse.text();
+                    console.error('Availability API Error Response:', errorText);
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: errorText || 'Unknown error' };
+                    }
+                    
+                    if (availabilityResponse.status === 401) {
+                        showNotification(
+                            'error',
+                            'Authentication Failed',
+                            'Please log in again to continue booking.'
+                        );
+                    } else {
+                        showNotification(
+                            'error',
+                            'Availability Check Failed',
+                            errorData.message || errorData.error || 'Could not verify room availability. Please try again.'
+                        );
+                    }
+                    return;
+                }
+
                 const availabilityResult = await availabilityResponse.json();
+                console.log('Availability API Result:', availabilityResult);
 
                 if (!availabilityResult.success || !availabilityResult.available) {
                     showNotification(
@@ -3568,7 +3600,12 @@ if (isset($_POST['logout'])) {
                 }
             } catch (error) {
                 console.error('Error checking availability:', error);
-                showNotification('error', 'Availability Check Failed', 'Could not verify room availability. Please try again.');
+                console.error('Error details:', error.message, error.stack);
+                showNotification(
+                    'error', 
+                    'Availability Check Failed', 
+                    'Could not verify room availability: ' + error.message + '. Please try again.'
+                );
                 return;
             }
 

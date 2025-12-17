@@ -1,15 +1,31 @@
 <?php
 // Use cookie-based authentication instead of sessions
+// Start output buffering to prevent headers already sent errors
+if (!ob_get_level()) {
+    ob_start();
+}
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/auth.php';
-header('Content-Type: application/json');
+
+// Set headers
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+}
 
 // Verify authentication token
 $current_user = verifyAuthToken();
 
 if (!$current_user) {
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
+    echo json_encode([
+        'error' => 'Unauthorized',
+        'message' => 'Authentication required. Please log in.',
+        'debug' => [
+            'cookies_received' => $_COOKIE ?? [],
+            'auth_token_exists' => isset($_COOKIE['auth_token'])
+        ]
+    ]);
     exit();
 }
 
