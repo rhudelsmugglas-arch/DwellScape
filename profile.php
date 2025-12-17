@@ -1,16 +1,16 @@
 <?php
-session_start();
-require_once 'config/database.php';
+// Use cookie-based authentication instead of sessions
+if (!ob_get_level()) ob_start();
 
-// Redirect if not logged in - go to home page (which has login modal)
-if (!isset($_SESSION['user_id'])) {
-    if (!headers_sent()) {
-        header('Location: home.php');
-        exit();
-    } else {
-        echo '<script>window.location.href = "home.php";</script>';
-        exit();
-    }
+require_once 'config/database.php';
+require_once 'config/auth.php';
+
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
+    header('Location: home.php');
+    exit();
 }
 
 $upload_message = '';
@@ -44,13 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['profile_picture'])) {
         } else {
             // Generate unique filename
             $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
-            $new_filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '.' . $file_extension;
+            $new_filename = 'profile_' . $current_user['user_id'] . '_' . time() . '.' . $file_extension;
             $upload_path = $upload_dir . $new_filename;
             
             // Delete old profile picture if exists
             try {
                 $stmt = $pdo->prepare("SELECT profile_picture FROM users WHERE id = ?");
-                $stmt->execute([$_SESSION['user_id']]);
+                $stmt->execute([$current_user['user_id']]);
                 $old_picture = $stmt->fetchColumn();
                 if ($old_picture && file_exists($old_picture)) {
                     unlink($old_picture);
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['profile_picture'])) {
                 // Update database
                 try {
                     $stmt = $pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
-                    $stmt->execute([$upload_path, $_SESSION['user_id']]);
+                    $stmt->execute([$upload_path, $current_user['user_id']]);
                     $upload_message = 'Profile picture updated successfully!';
                 } catch(PDOException $e) {
                     $upload_error = 'Failed to update database.';
@@ -87,7 +87,7 @@ $user_middle_initial = null;
 $user_last_name = null;
 try {
     $stmt = $pdo->prepare("SELECT gender, profile_picture, first_name, middle_initial, last_name FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$current_user['user_id']]);
     $user_data = $stmt->fetch();
     $user_gender = $user_data['gender'] ?? null;
     $user_profile_picture = $user_data['profile_picture'] ?? null;
@@ -575,7 +575,7 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
                 <div class="profile-header">
                     <div class="profile-avatar-container">
                         <div class="profile-avatar-large">
-                            <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>';">
+                            <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($current_user['username'], 0, 1)); ?>';">
                         </div>
                         <form method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
                             <input type="file" name="profile_picture" id="profile_picture" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="document.getElementById('uploadForm').submit();">
@@ -585,8 +585,8 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
                         </button>
                     </div>
                     <div class="profile-info">
-                        <h1><?php echo htmlspecialchars($full_name ?: $_SESSION['username']); ?></h1>
-                        <p><?php echo htmlspecialchars($_SESSION['email'] ?? 'No email provided'); ?></p>
+                        <h1><?php echo htmlspecialchars($full_name ?: $current_user['username']); ?></h1>
+                        <p><?php echo htmlspecialchars($current_user['email'] ?? 'No email provided'); ?></p>
                     </div>
                 </div>
 
@@ -597,11 +597,11 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
                     </div>
                     <div class="info-item">
                         <label>Username</label>
-                        <div class="value"><?php echo htmlspecialchars($_SESSION['username']); ?></div>
+                        <div class="value"><?php echo htmlspecialchars($current_user['username']); ?></div>
                     </div>
                     <div class="info-item">
                         <label>Email Address</label>
-                        <div class="value"><?php echo htmlspecialchars($_SESSION['email'] ?? 'Not set'); ?></div>
+                        <div class="value"><?php echo htmlspecialchars($current_user['email'] ?? 'Not set'); ?></div>
                     </div>
                     <div class="info-item">
                         <label>Account Status</label>
@@ -612,7 +612,7 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
                         <div class="value"><?php 
                             try {
                                 $stmt = $pdo->prepare("SELECT created_at FROM users WHERE id = ?");
-                                $stmt->execute([$_SESSION['user_id']]);
+                                $stmt->execute([$current_user['user_id']]);
                                 $created = $stmt->fetchColumn();
                                 echo $created ? date('F Y', strtotime($created)) : date('F Y');
                             } catch(PDOException $e) {
@@ -631,11 +631,11 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
                         <form>
                             <div class="form-group">
                                 <label>Username</label>
-                                <input type="text" value="<?php echo htmlspecialchars($_SESSION['username']); ?>" readonly>
+                                <input type="text" value="<?php echo htmlspecialchars($current_user['username']); ?>" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Email Address</label>
-                                <input type="email" value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>">
+                                <input type="email" value="<?php echo htmlspecialchars($current_user['email'] ?? ''); ?>">
                             </div>
                             <div class="form-group">
                                 <label>First Name</label>

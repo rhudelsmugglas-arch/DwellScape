@@ -1,15 +1,16 @@
 <?php
-session_start();
-require_once 'config/database.php';
+// Use cookie-based authentication instead of sessions
+if (!ob_get_level()) ob_start();
 
-if (!isset($_SESSION['user_id'])) {
-    if (!headers_sent()) {
-        header('Location: home.php');
-        exit();
-    } else {
-        echo '<script>window.location.href = "home.php";</script>';
-        exit();
-    }
+require_once 'config/database.php';
+require_once 'config/auth.php';
+
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
+    header('Location: home.php');
+    exit();
 }
 
 // Get user data from database
@@ -17,7 +18,7 @@ $user_gender = null;
 $user_profile_picture = null;
 try {
     $stmt = $pdo->prepare("SELECT gender, profile_picture FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$current_user['user_id']]);
     $user_data = $stmt->fetch();
     $user_gender = $user_data['gender'] ?? null;
     $user_profile_picture = $user_data['profile_picture'] ?? null;
@@ -36,8 +37,8 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
 }
 
 if (isset($_POST['logout'])) {
-    session_destroy();
-    header('Location: logout.php');
+    clearAuthCookie();
+    header('Location: home.php');
     exit();
 }
 ?>
@@ -2253,9 +2254,9 @@ if (isset($_POST['logout'])) {
             <div class="profile-section">
                 <button class="profile-btn" onclick="toggleProfileDropdown()">
                     <div class="profile-avatar">
-                        <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>';">
+                        <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($current_user['username'], 0, 1)); ?>';">
                     </div>
-                    <span class="profile-name"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                    <span class="profile-name"><?php echo htmlspecialchars($current_user['username']); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 

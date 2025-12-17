@@ -1,8 +1,14 @@
 <?php
-session_start();
+// Use cookie-based authentication instead of sessions
+if (!ob_get_level()) ob_start();
 
-// Redirect if not logged in
-if (!isset($_SESSION['user_id'])) {
+require_once 'config/database.php';
+require_once 'config/auth.php';
+
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
     header('Location: home.php');
     exit();
 }

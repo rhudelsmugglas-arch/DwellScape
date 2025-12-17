@@ -1,15 +1,16 @@
 <?php
-session_start();
+// Use cookie-based authentication instead of sessions
+if (!ob_get_level()) ob_start();
 
-// Redirect if not logged in - go to home page (which has login modal)
-if (!isset($_SESSION['user_id'])) {
-    if (!headers_sent()) {
-        header('Location: home.php');
-        exit();
-    } else {
-        echo '<script>window.location.href = "home.php";</script>';
-        exit();
-    }
+require_once 'config/database.php';
+require_once 'config/auth.php';
+
+// Verify authentication token
+$current_user = verifyAuthToken();
+
+if (!$current_user) {
+    header('Location: home.php');
+    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -319,11 +320,11 @@ if (!isset($_SESSION['user_id'])) {
                         <form>
                             <div class="form-group">
                                 <label>Username</label>
-                                <input type="text" value="<?php echo htmlspecialchars($_SESSION['username']); ?>" readonly>
+                                <input type="text" value="<?php echo htmlspecialchars($current_user['username']); ?>" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Email Address</label>
-                                <input type="email" value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>">
+                                <input type="email" value="<?php echo htmlspecialchars($current_user['email'] ?? ''); ?>">
                             </div>
                             <div class="form-group">
                                 <label>Full Name</label>
