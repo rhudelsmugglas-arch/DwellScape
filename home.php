@@ -1577,9 +1577,12 @@ if (isset($_POST['logout'])) {
                             console.log('Login successful, redirecting to:', redirectUrl);
                             console.log('Session ID from server:', response.session_id);
                             
-                            // Use window.location.replace for a full page reload (no back button)
-                            // This ensures cookies are properly sent
-                            window.location.replace(redirectUrl);
+                            // Small delay to ensure cookie is processed by browser
+                            // Cookies set via AJAX need a moment to be available
+                            setTimeout(function() {
+                                // Use window.location.href for full page reload with cookies
+                                window.location.href = redirectUrl;
+                            }, 100);
                         } else {
                             // Show error message - no redirect
                             errorDiv.textContent = response.error || 'Invalid username or password.';

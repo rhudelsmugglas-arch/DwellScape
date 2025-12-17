@@ -63,7 +63,25 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
                    (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
         
         // Set secure cookie
-        setcookie('auth_token', $token, $expires, '/', '', $is_https, true); // httponly=true, secure based on HTTPS
+        // Use SameSite=None for cross-site requests, or Lax for same-site
+        $same_site = 'Lax'; // Use Lax for same-site requests (better security)
+        
+        // Set cookie with proper attributes
+        $cookie_set = setcookie('auth_token', $token, [
+            'expires' => $expires,
+            'path' => '/',
+            'domain' => '', // Empty = current domain
+            'secure' => $is_https,
+            'httponly' => true,
+            'samesite' => $same_site
+        ]);
+        
+        error_log("Auth - Cookie set result: " . ($cookie_set ? 'SUCCESS' : 'FAILED'));
+        error_log("Auth - Cookie expires: " . date('Y-m-d H:i:s', $expires));
+        error_log("Auth - Cookie secure: " . ($is_https ? 'YES' : 'NO'));
+        error_log("Auth - Cookie path: /");
+        error_log("Auth - Cookie domain: (empty = current domain)");
+        error_log("Auth - Cookie SameSite: " . $same_site);
         
         // Also set user info in cookie (for quick access, but verify token on each request)
         $user_data = json_encode([
@@ -73,7 +91,14 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
             'role' => $role,
             'is_admin' => $is_admin
         ]);
-        setcookie('user_data', base64_encode($user_data), $expires, '/', '', $is_https, false); // Not httponly for JS access
+        setcookie('user_data', base64_encode($user_data), [
+            'expires' => $expires,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $is_https,
+            'httponly' => false,
+            'samesite' => $same_site
+        ]);
         
         return true;
     } catch(PDOException $e) {
@@ -88,11 +113,17 @@ function setAuthCookie($user_id, $username, $email, $role, $is_admin) {
 function verifyAuthToken() {
     global $pdo;
     
+    // Debug: Log all cookies received
+    error_log("Auth - verifyAuthToken called");
+    error_log("Auth - All cookies: " . json_encode($_COOKIE ?? []));
+    
     if (!isset($_COOKIE['auth_token'])) {
+        error_log("Auth - No auth_token cookie found");
         return null;
     }
     
     $token = $_COOKIE['auth_token'];
+    error_log("Auth - Token found: " . substr($token, 0, 10) . "...");
     
     try {
         // Verify token exists and hasn't expired
@@ -106,6 +137,7 @@ function verifyAuthToken() {
         $user = $stmt->fetch();
         
         if ($user) {
+            error_log("Auth - Token verified successfully for user: " . $user['username']);
             // Update last activity
             $update_stmt = $pdo->prepare("UPDATE auth_tokens SET last_used = NOW() WHERE token = ?");
             $update_stmt->execute([$token]);
@@ -119,6 +151,7 @@ function verifyAuthToken() {
             ];
         }
         
+        error_log("Auth - Token not found in database or expired");
         // Token invalid or expired - clear cookie
         setcookie('auth_token', '', time() - 3600, '/');
         setcookie('user_data', '', time() - 3600, '/');
