@@ -7,6 +7,8 @@
 @ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
 @ini_set('session.cookie_samesite', 'Lax');
 @ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
+@ini_set('session.cookie_path', '/');
+@ini_set('session.cookie_domain', '');
 @ini_set('session.gc_maxlifetime', '3600'); // Session data lifetime
 
 // Set session save path to a writable directory (Railway might not have /tmp)
@@ -14,16 +16,6 @@ $session_path = sys_get_temp_dir();
 if (is_writable($session_path)) {
     @ini_set('session.save_path', $session_path);
 }
-
-// Set session cookie parameters explicitly
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '', // Empty = current domain
-    'secure' => true, // HTTPS only
-    'httponly' => true,
-    'samesite' => 'Lax'
-]);
 
 // Start output buffering if not already started
 if (!ob_get_level()) {
