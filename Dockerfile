@@ -1,5 +1,5 @@
-# Use Railway's FrankenPHP image
-FROM ghcr.io/railwayapp/frankenphp:latest
+# Use official FrankenPHP image from Docker Hub
+FROM dunglas/frankenphp:latest
 
 # Install system dependencies for MySQL extensions
 RUN apt-get update && \
