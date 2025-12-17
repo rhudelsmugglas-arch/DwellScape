@@ -1,11 +1,16 @@
 <?php
 // Configure session cookie parameters BEFORE session_start()
-// Must match login.php and dashboard.php configuration
+// Detect HTTPS (Railway uses HTTPS, but check headers for proxy)
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+            (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+            (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+
 ini_set('session.cookie_httponly', '1');
 ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_secure', '1'); // HTTPS on Railway
+ini_set('session.cookie_secure', $is_https ? '1' : '0'); // Set based on actual HTTPS status
 ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
+ini_set('session.cookie_domain', ''); // Empty for current domain
 
 session_start();
 require_once 'config/database.php';

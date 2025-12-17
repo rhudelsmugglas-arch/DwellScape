@@ -1,11 +1,16 @@
 ﻿<?php
 // Configure session cookie parameters BEFORE session_start()
-// Railway uses HTTPS, so we need to configure cookies properly
+// Detect HTTPS (Railway uses HTTPS, but check headers for proxy)
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+            (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+            (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+
 ini_set('session.cookie_httponly', '1');
 ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_secure', '1'); // HTTPS on Railway
+ini_set('session.cookie_secure', $is_https ? '1' : '0'); // Set based on actual HTTPS status
 ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
+ini_set('session.cookie_domain', ''); // Empty for current domain
 
 session_start();
 require_once 'config/database.php';
@@ -90,11 +95,33 @@ if (empty($username) || empty($password)) {
             // Regenerate session ID for security (this also saves the session)
             session_regenerate_id(true);
             
+            // Get session cookie parameters
+            $cookie_params = session_get_cookie_params();
+            $session_name = session_name();
+            $session_id = session_id();
+            
+            // Manually set session cookie to ensure it's sent (fallback)
+            $cookie_secure = $is_https ? true : false;
+            setcookie(
+                $session_name,
+                $session_id,
+                [
+                    'expires' => $cookie_params['lifetime'] ? time() + $cookie_params['lifetime'] : 0,
+                    'path' => $cookie_params['path'],
+                    'domain' => $cookie_params['domain'],
+                    'secure' => $cookie_secure,
+                    'httponly' => $cookie_params['httponly'],
+                    'samesite' => $cookie_params['samesite']
+                ]
+            );
+            
             // Debug: Log session status (remove after testing)
-            error_log("Login - Session ID: " . session_id());
+            error_log("Login - Session ID: " . $session_id);
             error_log("Login - User ID set: " . $_SESSION['user_id']);
-            error_log("Login - Session cookie params: " . json_encode(session_get_cookie_params()));
+            error_log("Login - Session cookie params: " . json_encode($cookie_params));
             error_log("Login - Cookies being sent: " . json_encode($_COOKIE ?? []));
+            error_log("Login - Session name: " . $session_name);
+            error_log("Login - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';
@@ -102,7 +129,8 @@ if (empty($username) || empty($password)) {
                 'success' => true,
                 'redirect' => $redirect_url,
                 'role' => $user_role,
-                'username' => $user['username']
+                'username' => $user['username'],
+                'session_id' => $session_id // Include for debugging
             ];
         } else {
             $response = ['success' => false, 'error' => 'Invalid username or password.'];
@@ -112,6 +140,12 @@ if (empty($username) || empty($password)) {
     }
 }
 
-header('Content-Type: application/json');
+// Set headers AFTER setting cookies
+if (!headers_sent()) {
+    header('Content-Type: application/json');
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Pragma: no-cache');
+}
+
 echo json_encode($response);
 exit();
