@@ -56,9 +56,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     } else {
                         // Create new user with 'user' role
                         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                        
+                        // Ensure middle_initial is empty string if not provided
+                        if (empty($middle_initial)) {
+                            $middle_initial = '';
+                        }
+                        
+                        // Validate and format birthday
+                        $birthday_formatted = $birthday;
+                        if (!empty($birthday)) {
+                            $birthday_date = DateTime::createFromFormat('Y-m-d', $birthday);
+                            if ($birthday_date) {
+                                $birthday_formatted = $birthday_date->format('Y-m-d');
+                            }
+                        }
+                        
                         // Add name fields to database insert
                         $stmt = $pdo->prepare("INSERT INTO users (username, email, password, first_name, middle_initial, last_name, birthday, gender, role, is_admin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'user', 0)");
-                        $stmt->execute([$username, $email, $hashed_password, $first_name, $middle_initial, $last_name, $birthday, $gender]);
+                        $stmt->execute([$username, $email, $hashed_password, $first_name, $middle_initial ?: null, $last_name, $birthday_formatted ?: null, $gender]);
                         
                         // Check if AJAX request (from modal)
                         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -74,7 +89,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                 }
             } catch (PDOException $e) {
-                $error_message = 'Database error. Please try again.';
+                // Log the actual error for debugging
+                error_log("Signup error: " . $e->getMessage());
+                error_log("Signup error trace: " . $e->getTraceAsString());
+                
+                // Return more specific error message
+                $error_message = 'Database error: ' . $e->getMessage();
+                
+                // For AJAX requests, return JSON with error details
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false, 
+                        'error' => 'An error occurred. Please try again.',
+                        'debug' => $e->getMessage() // Remove this in production
+                    ]);
+                    exit();
+                }
             }
         }
     }
