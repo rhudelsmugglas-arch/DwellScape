@@ -3,7 +3,7 @@ session_start();
 require_once 'config/database.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: home.php');
     exit();
 }
 
@@ -32,7 +32,7 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
 
 if (isset($_POST['logout'])) {
     session_destroy();
-    header('Location: login.php');
+    header('Location: home.php');
     exit();
 }
 ?>

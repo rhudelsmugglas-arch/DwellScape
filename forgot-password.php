@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </form>
 
         <div class="auth-links">
-            <a href="login.php">Back to Login</a>
+            <a href="home.php">Back to Login</a>
         </div>
     </div>
 </body>

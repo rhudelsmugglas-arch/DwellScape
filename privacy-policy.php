@@ -2,13 +2,13 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: home.php');
     exit();
 }
 
 if (isset($_POST['logout'])) {
     session_destroy();
-    header('Location: login.php');
+    header('Location: home.php');
     exit();
 }
 ?>

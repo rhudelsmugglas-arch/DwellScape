@@ -9,7 +9,7 @@ require_once 'config/database.php';
 
 // Check if user is logged in (admin or regular user can use this)
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ../home.php');
     exit();
 }
 

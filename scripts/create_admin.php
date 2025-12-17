@@ -28,7 +28,7 @@ try {
         echo "<p>Password: <strong>$admin_password</strong></p>";
         echo "<p>Email: <strong>$admin_email</strong></p>";
         echo "<p>Role: <strong>admin</strong></p>";
-        echo "<p><a href='login.php'>Go to Login</a></p>";
+        echo "<p><a href='../home.php'>Go to Login</a></p>";
     } else {
         // Create new admin account with admin role
         $hashed_password = password_hash($admin_password, PASSWORD_DEFAULT);
@@ -40,7 +40,7 @@ try {
         echo "<p>Password: <strong>$admin_password</strong></p>";
         echo "<p>Email: <strong>$admin_email</strong></p>";
         echo "<p>Role: <strong>admin</strong></p>";
-        echo "<p><a href='login.php'>Go to Login</a></p>";
+        echo "<p><a href='../home.php'>Go to Login</a></p>";
     }
 } catch(PDOException $e) {
     echo "<h2>Error creating admin account</h2>";

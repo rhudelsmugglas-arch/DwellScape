@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$error_message) {
         <?php if ($success_message): ?>
             <div class="success-message"><?php echo htmlspecialchars($success_message); ?></div>
             <div class="auth-links">
-                <a href="login.php">Go to Login</a>
+                <a href="home.php">Go to Login</a>
             </div>
         <?php else: ?>
 
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !$error_message) {
         </form>
 
         <div class="auth-links">
-            <a href="login.php">Back to Login</a>
+            <a href="home.php">Back to Login</a>
         </div>
 
         <?php endif; ?>
