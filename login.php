@@ -34,12 +34,19 @@ if (isset($_SESSION['signup_success'])) {
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
     // Check user role and redirect accordingly
-    if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-        header('Location: admin/admin.php');
+    if (!headers_sent()) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+            header('Location: admin/admin.php');
+        } else {
+            header('Location: dashboard.php');
+        }
+        exit();
     } else {
-    header('Location: dashboard.php');
+        // Fallback: Use JavaScript redirect if headers already sent
+        $redirect_url = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') ? 'admin/admin.php' : 'dashboard.php';
+        echo '<script>window.location.href = "' . htmlspecialchars($redirect_url) . '";</script>';
+        exit();
     }
-    exit();
 }
 
 $forgot_password_error = '';
@@ -82,7 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
     
     // Return JSON response for AJAX
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
         echo json_encode([
             'success' => !empty($forgot_password_success),
             'error' => $forgot_password_error,
@@ -148,7 +157,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['forgot_password'])) {
                           (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
                 
                 if ($is_ajax) {
-                    header('Content-Type: application/json');
+                    if (!headers_sent()) {
+                        header('Content-Type: application/json');
+                    }
                     $redirect_url = ($user_role === 'admin') ? 'admin/admin.php' : 'dashboard.php';
                     // Ensure we always send redirect URL and role
                     $response = [
@@ -163,12 +174,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['forgot_password'])) {
                 }
                 
                 // Redirect admin to admin page, regular users to dashboard
-                if ($user_role === 'admin') {
-                    header('Location: admin/admin.php');
+                if (!headers_sent()) {
+                    if ($user_role === 'admin') {
+                        header('Location: admin/admin.php');
+                    } else {
+                        header('Location: dashboard.php');
+                    }
+                    exit();
                 } else {
-                    header('Location: dashboard.php');
+                    // Fallback: Use JavaScript redirect if headers already sent
+                    echo '<script>window.location.href = "' . ($user_role === 'admin' ? 'admin/admin.php' : 'dashboard.php') . '";</script>';
+                    exit();
                 }
-                exit();
             } else {
                 $error_message = 'Invalid username or password.';
             }
@@ -179,7 +196,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['forgot_password'])) {
     
     // Check if AJAX request and return JSON error
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && !empty($error_message)) {
-        header('Content-Type: application/json');
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
         echo json_encode(['success' => false, 'error' => $error_message]);
         exit();
     }
