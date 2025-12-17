@@ -1126,7 +1126,7 @@ if (isset($_POST['logout'])) {
                 <p>Sign in to your account</p>
             </div>
             <div class="error-message" id="loginError" style="display: none;"></div>
-            <form method="POST" id="loginForm" action="login.php">
+            <form method="POST" id="loginForm" action="login.php" onsubmit="return handleLoginSubmit(event)">
                 <div class="form-group">
                     <label for="loginUsername">Username</label>
                     <div class="input-with-icon">
@@ -1530,7 +1530,44 @@ if (isset($_POST['logout'])) {
             }
         });
 
-        // Login form submission
+        // Login form submission handler - use regular form POST for reliable sessions
+        function handleLoginSubmit(e) {
+            const form = e.target;
+            const errorDiv = document.getElementById('loginError');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            
+            // Basic validation
+            const username = form.querySelector('[name="username"]').value.trim();
+            const password = form.querySelector('[name="password"]').value;
+            
+            if (!username || !password) {
+                e.preventDefault();
+                errorDiv.textContent = 'Please fill in all fields.';
+                errorDiv.style.display = 'block';
+                return false;
+            }
+            
+            // Show loading state
+            errorDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
+            
+            // Let form submit normally - session cookie will be set properly
+            return true;
+        }
+        
+        // Check for error in URL (from regular form submission)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = urlParams.get('error');
+            errorDiv.style.display = 'block';
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
+        // Old AJAX handler - commented out, using regular form POST instead
+        /*
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
