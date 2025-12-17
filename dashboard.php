@@ -1,55 +1,27 @@
 <?php
-// Configure session cookie parameters BEFORE session_start()
-// Detect HTTPS (Railway uses HTTPS, but check headers for proxy)
-$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
-            (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
-            (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
-
-ini_set('session.cookie_httponly', '1');
-ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_secure', $is_https ? '1' : '0'); // Set based on actual HTTPS status
-ini_set('session.cookie_samesite', 'Lax');
-ini_set('session.cookie_path', '/');
-ini_set('session.cookie_domain', ''); // Empty for current domain
-
+// Use cookie-based authentication instead of sessions
 if (!ob_get_level()) ob_start();
 
 require_once 'config/database.php';
-require_once 'config/session_handler.php';
+require_once 'config/auth.php';
 
-// Use database session handler (must match login.php)
-$session_handler = new DatabaseSessionHandler($pdo);
-session_set_save_handler($session_handler, true);
+// Verify authentication token
+$current_user = verifyAuthToken();
 
-// Start session
-session_start();
-
-error_log("Dashboard - Session started using database handler");
-error_log("Dashboard - Session ID: " . session_id());
-error_log("Dashboard - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
-
-// Debug: Check session (remove after testing)
-error_log("Dashboard - Session ID: " . session_id());
-error_log("Dashboard - Session name: " . session_name());
-error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
-error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
-error_log("Dashboard - Cookies received: " . json_encode($_COOKIE ?? []));
-error_log("Dashboard - Session cookie exists: " . (isset($_COOKIE[session_name()]) ? 'YES (' . $_COOKIE[session_name()] . ')' : 'NO'));
-error_log("Dashboard - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
-
-// Redirect if not logged in
-if (!isset($_SESSION['user_id'])) {
-    error_log("Dashboard - User not logged in, redirecting to home.php");
+if (!$current_user) {
+    error_log("Dashboard - User not authenticated, redirecting to home.php");
     header('Location: home.php');
     exit();
 }
+
+error_log("Dashboard - User authenticated: " . $current_user['username'] . " (ID: " . $current_user['user_id'] . ")");
 
 // Get user data from database
 $user_gender = null;
 $user_profile_picture = null;
 try {
     $stmt = $pdo->prepare("SELECT gender, profile_picture FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$current_user['user_id']]);
     $user_data = $stmt->fetch();
     $user_gender = $user_data['gender'] ?? null;
     $user_profile_picture = $user_data['profile_picture'] ?? null;
@@ -68,15 +40,9 @@ if ($user_profile_picture && file_exists($user_profile_picture)) {
 }
 
 if (isset($_POST['logout'])) {
-    session_destroy();
-    if (!headers_sent()) {
-        header('Location: home.php');
-        exit();
-    } else {
-        // Fallback: Use JavaScript redirect if headers already sent
-        echo '<script>window.location.href = "home.php";</script>';
-        exit();
-    }
+    clearAuthCookie();
+    header('Location: home.php');
+    exit();
 }
 ?>
 
@@ -2671,9 +2637,9 @@ if (isset($_POST['logout'])) {
             <div class="profile-section">
                 <button class="profile-btn" onclick="toggleProfileDropdown()">
                     <div class="profile-avatar">
-                        <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>';">
+                        <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="Profile" onerror="this.style.display='none'; this.parentElement.innerHTML='<?php echo strtoupper(substr($current_user['username'], 0, 1)); ?>';">
                     </div>
-                    <span class="profile-name"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                    <span class="profile-name"><?php echo htmlspecialchars($current_user['username']); ?></span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 
