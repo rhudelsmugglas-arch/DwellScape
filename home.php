@@ -1474,43 +1474,50 @@ if (isset($_POST['logout'])) {
             }, 4000);
         });
 
-        // Modal Functions
-        function openLoginModal() {
+        // Modal Functions - Define globally so onclick handlers can access them
+        window.openLoginModal = function() {
             document.getElementById('loginModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        }
+        };
 
-        function closeLoginModal() {
+        window.closeLoginModal = function() {
             document.getElementById('loginModal').classList.remove('active');
             document.body.style.overflow = '';
-            document.getElementById('loginForm').reset();
-            document.getElementById('loginError').style.display = 'none';
-        }
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) loginForm.reset();
+            const loginError = document.getElementById('loginError');
+            if (loginError) loginError.style.display = 'none';
+        };
 
-        function openSignupModal() {
+        window.openSignupModal = function() {
             document.getElementById('signupModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        }
+        };
 
-        function closeSignupModal() {
+        window.closeSignupModal = function() {
             document.getElementById('signupModal').classList.remove('active');
             document.body.style.overflow = '';
-            document.getElementById('signupForm').reset();
-            document.getElementById('signupError').style.display = 'none';
-        }
+            const signupForm = document.getElementById('signupForm');
+            if (signupForm) signupForm.reset();
+            const signupError = document.getElementById('signupError');
+            if (signupError) signupError.style.display = 'none';
+        };
 
-        function openForgotPasswordModal() {
+        window.openForgotPasswordModal = function() {
             document.getElementById('forgotPasswordModal').classList.add('active');
             document.body.style.overflow = 'hidden';
-        }
+        };
 
-        function closeForgotPasswordModal() {
+        window.closeForgotPasswordModal = function() {
             document.getElementById('forgotPasswordModal').classList.remove('active');
             document.body.style.overflow = '';
-            document.getElementById('forgotPasswordForm').reset();
-            document.getElementById('forgotPasswordError').style.display = 'none';
-            document.getElementById('forgotPasswordSuccess').style.display = 'none';
-        }
+            const forgotForm = document.getElementById('forgotPasswordForm');
+            if (forgotForm) forgotForm.reset();
+            const forgotError = document.getElementById('forgotPasswordError');
+            if (forgotError) forgotError.style.display = 'none';
+            const forgotSuccess = document.getElementById('forgotPasswordSuccess');
+            if (forgotSuccess) forgotSuccess.style.display = 'none';
+        };
 
         // Close modals when clicking outside
         document.addEventListener('click', function(event) {
@@ -1559,12 +1566,20 @@ if (isset($_POST['logout'])) {
         // Check for error in URL (from regular form submission)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
+            // Open login modal and show error
+            window.openLoginModal();
             const errorDiv = document.getElementById('loginError');
             errorDiv.textContent = urlParams.get('error');
             errorDiv.style.display = 'block';
             // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
+        
+        // Ensure modal functions are available globally
+        window.openLoginModal = openLoginModal;
+        window.closeLoginModal = closeLoginModal;
+        window.openSignupModal = openSignupModal;
+        window.closeSignupModal = closeSignupModal;
         
         // Old AJAX handler - commented out, using regular form POST instead
         /*
