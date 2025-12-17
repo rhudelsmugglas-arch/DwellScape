@@ -2588,7 +2588,9 @@ if (isset($_POST['logout'])) {
 
         async function loadBookings() {
             try {
-                const response = await fetch('api/get_bookings.php');
+                const response = await fetch('api/get_bookings.php', {
+                    credentials: 'include' // Include cookies for authentication
+                });
                 const result = await response.json();
                 
                 if (result.success && result.bookings) {
@@ -2729,7 +2731,9 @@ if (isset($_POST['logout'])) {
         // Fetch booked dates from API
         async function fetchBookedDates() {
             try {
-                const response = await fetch('api/get_booked_dates.php');
+                const response = await fetch('api/get_booked_dates.php', {
+                    credentials: 'include' // Include cookies for authentication
+                });
                 const result = await response.json();
                 
                 if (result.success && result.booked_dates) {
@@ -3252,6 +3256,7 @@ if (isset($_POST['logout'])) {
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include', // Include cookies for authentication
                     body: JSON.stringify({
                         checkin: checkin,
                         checkout: checkout
@@ -3427,6 +3432,7 @@ if (isset($_POST['logout'])) {
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include', // Include cookies for authentication
                     body: JSON.stringify({
                         amount: bookingData.totalPrice,
                         booking_data: bookingData
@@ -3454,7 +3460,9 @@ if (isset($_POST['logout'])) {
                 // Poll for payment completion
                 const checkPayment = setInterval(async function() {
                     try {
-                        const checkResponse = await fetch('api/check_payment.php?payment_link_id=' + result.payment_link_id);
+                        const checkResponse = await fetch('api/check_payment.php?payment_link_id=' + result.payment_link_id, {
+                            credentials: 'include' // Include cookies for authentication
+                        });
                         const checkResult = await checkResponse.json();
                         
                         if (checkResult.success && checkResult.paid) {
