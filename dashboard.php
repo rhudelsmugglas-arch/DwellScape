@@ -7,6 +7,7 @@
 @ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
 @ini_set('session.cookie_samesite', 'Lax');
 @ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
+@ini_set('session.gc_maxlifetime', '3600'); // Session data lifetime
 
 // Set session save path to a writable directory (Railway might not have /tmp)
 $session_path = sys_get_temp_dir();
@@ -24,6 +25,16 @@ if (ob_get_length() > 0) {
     @ob_clean();
 }
 
+// Set session cookie parameters explicitly (MUST be before session_start)
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '', // Empty = current domain
+    'secure' => true, // HTTPS only
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
 // Start session (suppress all warnings)
 @session_start();
 
@@ -31,6 +42,9 @@ if (ob_get_length() > 0) {
 error_log("Dashboard - Session ID: " . session_id());
 error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
 error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
+error_log("Dashboard - Cookies received: " . json_encode($_COOKIE ?? []));
+error_log("Dashboard - Session cookie name: " . session_name());
+error_log("Dashboard - Session cookie exists: " . (isset($_COOKIE[session_name()]) ? 'YES' : 'NO'));
 
 require_once 'config/database.php';
 
