@@ -12,12 +12,19 @@ RUN apt-get update && \
 # Copy application files
 COPY . /app
 
+# Copy Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Copy startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 # Set working directory
 WORKDIR /app
 
 # Expose port (Railway will set PORT env var)
 EXPOSE 8080
 
-# Start FrankenPHP
-CMD ["frankenphp", "run"]
+# Use startup script to handle PORT dynamically
+CMD ["/start.sh"]
 

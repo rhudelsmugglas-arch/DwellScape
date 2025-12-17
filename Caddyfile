@@ -1,0 +1,13 @@
+{
+    auto_https off
+    admin localhost:2019
+}
+
+:8080 {
+    root * /app
+    encode zstd gzip
+    php_server
+    file_server
+    try_files {path} {path}/ /index.php?{query}
+}
+
