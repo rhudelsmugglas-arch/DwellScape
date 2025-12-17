@@ -1,62 +1,11 @@
 ﻿<?php
-// Configure ALL ini settings BEFORE any output or session operations
-@ini_set('output_buffering', 'On');
-@ini_set('implicit_flush', 'Off');
-@ini_set('session.cookie_httponly', '1');
-@ini_set('session.use_only_cookies', '1');
-@ini_set('session.cookie_secure', '1'); // Railway uses HTTPS
-@ini_set('session.cookie_samesite', 'Lax');
-@ini_set('session.cookie_lifetime', '0'); // Session cookie expires when browser closes
-@ini_set('session.cookie_path', '/');
-@ini_set('session.cookie_domain', '');
-@ini_set('session.gc_maxlifetime', '3600'); // Session data lifetime
-
-// Set session save path to a writable directory (Railway might not have /tmp)
-$session_path = sys_get_temp_dir();
-if (is_writable($session_path)) {
-    @ini_set('session.save_path', $session_path);
-}
-
-// Start output buffering if not already started
-if (!ob_get_level()) {
-    @ob_start();
-}
-
-// Clear any existing output that might have been sent
-if (ob_get_length() > 0) {
-    @ob_clean();
-}
-
-// Start session (suppress all warnings)
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    @session_start();
-}
-
-// Verify session started
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    error_log("ERROR: Session failed to start in dashboard.php");
-}
-
-// Debug: Log session status (remove in production)
-error_log("Dashboard - Session ID: " . session_id());
-error_log("Dashboard - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
-error_log("Dashboard - All session data: " . json_encode($_SESSION ?? []));
-error_log("Dashboard - Cookies received: " . json_encode($_COOKIE ?? []));
-error_log("Dashboard - Session cookie name: " . session_name());
-error_log("Dashboard - Session cookie exists: " . (isset($_COOKIE[session_name()]) ? 'YES' : 'NO'));
-
+session_start();
 require_once 'config/database.php';
 
-// Redirect if not logged in - go to home page (which has login modal)
+// Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
-    if (!headers_sent()) {
-        header('Location: home.php');
-        exit();
-    } else {
-        // Fallback: Use JavaScript redirect if headers already sent
-        echo '<script>window.location.href = "home.php";</script>';
-        exit();
-    }
+    header('Location: home.php');
+    exit();
 }
 
 // Get user data from database

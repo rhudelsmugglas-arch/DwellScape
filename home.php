@@ -1,32 +1,5 @@
 <?php
-// Configure session settings
-@ini_set('output_buffering', 'On');
-@ini_set('implicit_flush', 'Off');
-@ini_set('session.cookie_httponly', '1');
-@ini_set('session.use_only_cookies', '1');
-@ini_set('session.cookie_secure', '1');
-@ini_set('session.cookie_samesite', 'Lax');
-@ini_set('session.cookie_lifetime', '0');
-@ini_set('session.cookie_path', '/');
-@ini_set('session.cookie_domain', '');
-@ini_set('session.gc_maxlifetime', '3600');
-
-// Set session save path
-$session_path = sys_get_temp_dir();
-if (is_writable($session_path)) {
-    @ini_set('session.save_path', $session_path);
-}
-
-// Start output buffering
-if (!ob_get_level()) {
-    @ob_start();
-}
-
-// Start session
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    @session_start();
-}
-
+session_start();
 require_once 'config/database.php';
 
 // Check if user is logged in
