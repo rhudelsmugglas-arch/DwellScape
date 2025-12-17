@@ -108,6 +108,12 @@ if (empty($username) || empty($password)) {
                 error_log("Login - Session restarted, status: " . session_status());
             }
             
+            // Ensure session is active before setting data
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                error_log("Login - Session not active before setting data, starting...");
+                session_start();
+            }
+            
             // Set session data
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
@@ -115,34 +121,43 @@ if (empty($username) || empty($password)) {
             $_SESSION['role'] = $user_role;
             $_SESSION['is_admin'] = $is_admin;
             
-            // Get session info
+            // Get session ID (must exist now)
             $session_id = session_id();
+            if (empty($session_id)) {
+                error_log("Login - ERROR: Session ID is empty after setting data!");
+                // Generate a session ID if it doesn't exist
+                if (function_exists('session_create_id')) {
+                    $session_id = session_create_id();
+                    session_id($session_id);
+                    session_start();
+                }
+            }
+            
             $session_name = session_name();
             $cookie_params = session_get_cookie_params();
             
-            // Don't regenerate ID - just set the data and let PHP save it
-            // Regenerating can cause issues with session file writing on Railway
-            
-            // Debug: Log session status AFTER setting data
             error_log("Login - Session ID: " . ($session_id ?: 'EMPTY'));
             error_log("Login - Session name: " . $session_name);
             error_log("Login - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
-            
-            // Verify data was set
-            if (!isset($_SESSION['user_id'])) {
-                error_log("Login - CRITICAL ERROR: Session data not set!");
-            }
             error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
             error_log("Login - All session data: " . json_encode($_SESSION ?? []));
-            error_log("Login - Session cookie params: " . json_encode($cookie_params));
-            error_log("Login - Cookies received: " . json_encode($_COOKIE ?? []));
-            error_log("Login - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
-            error_log("Login - Session save path: " . session_save_path());
-            error_log("Login - Session file should be: " . session_save_path() . '/sess_' . $session_id);
             
-            // PHP will automatically write session when script ends
-            // Don't close/restart - that creates a new empty session
-            // The session file will be written with all data intact
+            // Force session write to database
+            if ($session_id) {
+                session_write_close();
+                error_log("Login - Session written to database, ID: " . $session_id);
+                
+                // Restart session with same ID
+                session_id($session_id);
+                session_start();
+                
+                // Verify data was read back
+                error_log("Login - After restart - Session ID: " . session_id());
+                error_log("Login - After restart - User ID: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
+                error_log("Login - After restart - Session data: " . json_encode($_SESSION ?? []));
+            } else {
+                error_log("Login - CRITICAL: Cannot write session - no session ID!");
+            }
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';

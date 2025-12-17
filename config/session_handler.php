@@ -41,10 +41,13 @@ class DatabaseSessionHandler implements SessionHandlerInterface {
     #[\ReturnTypeWillChange]
     public function read($session_id) {
         try {
+            error_log("SessionHandler - Reading session ID: " . $session_id);
             $stmt = $this->pdo->prepare("SELECT data FROM {$this->table} WHERE id = ? AND last_activity > ?");
             $stmt->execute([$session_id, time() - 3600]); // 1 hour timeout
             $result = $stmt->fetch();
-            return $result ? $result['data'] : '';
+            $data = $result ? $result['data'] : '';
+            error_log("SessionHandler - Read result: " . (empty($data) ? 'EMPTY' : 'Found ' . strlen($data) . ' bytes'));
+            return $data;
         } catch(PDOException $e) {
             error_log("Session read error: " . $e->getMessage());
             return '';
@@ -54,13 +57,19 @@ class DatabaseSessionHandler implements SessionHandlerInterface {
     #[\ReturnTypeWillChange]
     public function write($session_id, $session_data) {
         try {
+            error_log("SessionHandler - Writing session ID: " . $session_id);
+            error_log("SessionHandler - Session data length: " . strlen($session_data));
+            error_log("SessionHandler - Session data preview: " . substr($session_data, 0, 100));
+            
             $stmt = $this->pdo->prepare("
                 INSERT INTO {$this->table} (id, data, last_activity) 
                 VALUES (?, ?, ?) 
                 ON DUPLICATE KEY UPDATE data = ?, last_activity = ?
             ");
             $time = time();
-            return $stmt->execute([$session_id, $session_data, $time, $session_data, $time]);
+            $result = $stmt->execute([$session_id, $session_data, $time, $session_data, $time]);
+            error_log("SessionHandler - Write result: " . ($result ? 'SUCCESS' : 'FAILED'));
+            return $result;
         } catch(PDOException $e) {
             error_log("Session write error: " . $e->getMessage());
             return false;
