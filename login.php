@@ -12,45 +12,19 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
-// Set session save path BEFORE session_start() using session_save_path() function
-// ini_set() doesn't work for session.save_path, must use session_save_path()
-$session_path = sys_get_temp_dir();
-error_log("Login - sys_get_temp_dir() returned: " . $session_path);
-error_log("Login - Session path writable: " . (is_writable($session_path) ? 'YES' : 'NO'));
-
-if (is_writable($session_path)) {
-    session_save_path($session_path);
-    error_log("Login - Setting session save path to: " . $session_path);
-    error_log("Login - Session save path after session_save_path(): " . session_save_path());
-} else {
-    // Try alternative paths
-    $alt_paths = ['/tmp', '/var/tmp', '/app/tmp'];
-    foreach ($alt_paths as $alt_path) {
-        if (is_dir($alt_path) && is_writable($alt_path)) {
-            session_save_path($alt_path);
-            error_log("Login - Using alternative session path: " . $alt_path);
-            break;
-        }
-    }
-    error_log("Login - WARNING: Default session path not writable: " . $session_path);
-    error_log("Login - Final session save path: " . session_save_path());
-}
-
-// Start session - use @ to suppress warnings but check status
-@session_start();
-$session_status = session_status();
-error_log("Login - session_start() called, status: " . $session_status . " (2=PHP_SESSION_ACTIVE)");
-
-if ($session_status !== PHP_SESSION_ACTIVE) {
-    error_log("Login - WARNING: Session status is " . $session_status . " (expected 2)");
-    error_log("Login - But continuing anyway - PHP_SESSION_NONE=0, PHP_SESSION_DISABLED=1, PHP_SESSION_ACTIVE=2");
-}
-
-error_log("Login - Session ID after start: " . (session_id() ?: 'EMPTY'));
-error_log("Login - Session save path after start: " . ini_get('session.save_path'));
-error_log("Login - Final session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
-
 require_once 'config/database.php';
+require_once 'config/session_handler.php';
+
+// Use database session handler (file sessions don't work on Railway)
+$session_handler = new DatabaseSessionHandler($pdo);
+session_set_save_handler($session_handler, true);
+
+// Start session
+session_start();
+
+error_log("Login - Session started using database handler");
+error_log("Login - Session ID: " . session_id());
+error_log("Login - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
 
 // If GET request, redirect to home
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

@@ -12,8 +12,14 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.cookie_path', '/');
 ini_set('session.cookie_domain', ''); // Empty for current domain
 
-session_start();
 require_once 'config/database.php';
+require_once 'config/session_handler.php';
+
+// Use database session handler (must match login.php and dashboard.php)
+$session_handler = new DatabaseSessionHandler($pdo);
+session_set_save_handler($session_handler, true);
+
+session_start();
 
 // Check if user is logged in
 $is_logged_in = isset($_SESSION['user_id']);
