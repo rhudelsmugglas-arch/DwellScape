@@ -98,41 +98,27 @@ if (empty($username) || empty($password)) {
             $_SESSION['role'] = $user_role;
             $_SESSION['is_admin'] = $is_admin;
             
-            // Get session info BEFORE regenerating
-            $old_session_id = session_id();
-            
-            // Regenerate session ID for security (PHP automatically copies session data)
-            session_regenerate_id(true);
-            
-            // Get session info AFTER regenerating
-            $new_session_id = session_id();
+            // Get session info
+            $session_id = session_id();
             $session_name = session_name();
             $cookie_params = session_get_cookie_params();
             
-            // Verify session data is still there after regeneration
-            if (!isset($_SESSION['user_id'])) {
-                // If lost, set again
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['role'] = $user_role;
-                $_SESSION['is_admin'] = $is_admin;
-                error_log("Login - WARNING: Session data lost after regenerate, resetting!");
-            }
+            // Don't regenerate ID - just set the data and let PHP save it
+            // Regenerating can cause issues with session file writing on Railway
             
-            // DO NOT close and restart session - that creates a new empty session!
-            // PHP will automatically write the session when the script ends
-            // The session file will be saved with the new session ID and all data
-            
-            // Debug: Log session status
-            error_log("Login - Old Session ID: " . $old_session_id);
-            error_log("Login - New Session ID: " . $new_session_id);
+            // Debug: Log session status BEFORE writing
+            error_log("Login - Session ID: " . ($session_id ?: 'EMPTY'));
             error_log("Login - Session name: " . $session_name);
+            error_log("Login - Session status: " . session_status() . " (2=PHP_SESSION_ACTIVE)");
             error_log("Login - User ID in session: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET'));
             error_log("Login - All session data: " . json_encode($_SESSION ?? []));
             error_log("Login - Session cookie params: " . json_encode($cookie_params));
             error_log("Login - Cookies received: " . json_encode($_COOKIE ?? []));
             error_log("Login - HTTPS detected: " . ($is_https ? 'YES' : 'NO'));
+            error_log("Login - Session save path: " . ini_get('session.save_path'));
+            
+            // PHP will automatically write session when script ends
+            // Don't close/restart - that creates a new empty session
             
             // Return JSON response
             $redirect_url = $is_admin ? 'admin/admin.php' : 'dashboard.php';
