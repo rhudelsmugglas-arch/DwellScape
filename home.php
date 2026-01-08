@@ -1122,7 +1122,7 @@ if (isset($_POST['logout'])) {
                     Book Now <i class="fas fa-arrow-right"></i>
                 </a>
                 <?php else: ?>
-                <a href="javascript:void(0)" class="cta-button" onclick="alert('Please login to book your staycation.');">
+                <a href="javascript:void(0)" class="cta-button" onclick="openLoginModal();">
                     Book Now <i class="fas fa-arrow-right"></i>
                 </a>
                 <?php endif; ?>
