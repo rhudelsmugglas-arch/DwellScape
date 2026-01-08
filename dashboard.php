@@ -3653,7 +3653,9 @@ if (isset($_POST['logout'])) {
             // Load bookings from database
             async function loadBookings() {
                 try {
-                    const response = await fetch('api/get_bookings.php');
+                    const response = await fetch('api/get_bookings.php', {
+                        credentials: 'include' // Include cookies for authentication
+                    });
                     const result = await response.json();
                     
                     if (result.success && result.bookings) {

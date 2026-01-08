@@ -14,7 +14,11 @@ if (!$current_user) {
 }
 
 try {
-    // Fetch bookings for the current user
+    // Get today's date for filtering ongoing bookings
+    $today = date('Y-m-d');
+    
+    // Fetch ongoing bookings for the current user
+    // Ongoing bookings: check-in date <= today AND check-out date >= today
     $stmt = $pdo->prepare("
         SELECT 
             b.id,
@@ -30,10 +34,12 @@ try {
         FROM bookings b
         INNER JOIN users u ON b.user_id = u.id
         WHERE b.user_id = ?
-        ORDER BY b.created_at DESC
+        AND b.checkin_date <= ?
+        AND b.checkout_date >= ?
+        ORDER BY b.checkin_date ASC, b.created_at DESC
     ");
     
-    $stmt->execute([$current_user['user_id']]);
+    $stmt->execute([$current_user['user_id'], $today, $today]);
     $bookings = $stmt->fetchAll();
     
     // Format bookings for frontend
