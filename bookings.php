@@ -637,20 +637,19 @@ if (isset($_POST['logout'])) {
             font-size: 20px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 4px;
+            margin-bottom: 0;
         }
 
         .calendar-date .weekday {
             font-size: 11px;
             color: #6b7280;
-            margin-top: 2px;
+            margin-top: 0;
         }
 
         .calendar-date .today-label {
-            position: absolute;
-            top: calc(50% + 5px);
-            left: 50%;
-            transform: translate(-50%, -50%);
+            position: relative;
+            display: inline-block;
+            margin: 2px auto;
             background: #10b981;
             color: white;
             font-size: 7px;
@@ -2827,8 +2826,8 @@ if (isset($_POST['logout'])) {
                 dateCell.innerHTML = `
                     <div class="month">${month}</div>
                     <div class="day">${day}</div>
-                    <div class="weekday">${weekday}</div>
                     ${isToday ? '<div class="today-label">TODAY</div>' : ''}
+                    <div class="weekday">${weekday}</div>
                 `;
                 
                 // Add click handler only if not booked
