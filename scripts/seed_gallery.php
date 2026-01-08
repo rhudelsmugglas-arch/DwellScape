@@ -74,7 +74,7 @@ $gallery_images = [
         'display_order' => 8,
         'is_active' => 1
     ],
-    // Bedroom 1
+    // Bedroom 1 - Use bedroom1-2.png or 1bedroom.png
     [
         'image_url' => 'pictures/bedroom1-2.png',
         'title' => 'Bedroom 1',
@@ -83,7 +83,7 @@ $gallery_images = [
         'display_order' => 9,
         'is_active' => 1
     ],
-    // Bedroom 2
+    // Bedroom 2 - First image
     [
         'image_url' => 'pictures/bedroom2-1.png',
         'title' => 'Bedroom 2',
@@ -92,6 +92,7 @@ $gallery_images = [
         'display_order' => 10,
         'is_active' => 1
     ],
+    // Bedroom 2 - Second image
     [
         'image_url' => 'pictures/bedroom2-2.png',
         'title' => 'Bedroom 2',
