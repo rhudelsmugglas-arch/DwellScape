@@ -1,6 +1,16 @@
 <?php
-session_start();
+// Suppress any output before JSON
+ob_start();
+
+// Start session without output
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+
 require_once __DIR__ . '/../config/database.php';
+
+// Clear any output that might have been generated
+ob_clean();
 
 header('Content-Type: application/json');
 
@@ -53,14 +63,15 @@ try {
     
     echo json_encode([
         'success' => true, 
-        'message' => 'Thank you for your message! We will get back to you soon.'
+        'message' => 'Message sent successfully!'
     ]);
+    exit();
 } catch(PDOException $e) {
     error_log("Error saving suggestion: " . $e->getMessage());
     echo json_encode([
         'success' => false, 
         'message' => 'Sorry, there was an error sending your message. Please try again later.'
     ]);
+    exit();
 }
-?>
 
