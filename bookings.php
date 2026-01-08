@@ -643,13 +643,14 @@ if (isset($_POST['logout'])) {
         .calendar-date .weekday {
             font-size: 11px;
             color: #6b7280;
+            margin-top: 2px;
         }
 
         .calendar-date .today-label {
             position: absolute;
-            bottom: 8px;
+            top: calc(50% + 5px);
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             background: #10b981;
             color: white;
             font-size: 7px;
