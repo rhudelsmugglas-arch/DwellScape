@@ -3987,44 +3987,17 @@ if (isset($_POST['logout'])) {
             }
         });
 
-        // Handle image errors with AVIF to PNG fallback
+        // Handle image errors - hide gallery items if images fail to load (no error messages)
         function handleImageError(img, originalSrc) {
-            // Prevent infinite loops
-            if (img.dataset.errorHandled === 'true') {
-                return;
+            // Immediately hide the entire gallery item
+            const galleryItem = img.closest('.gallery-item');
+            if (galleryItem) {
+                galleryItem.style.display = 'none';
+                galleryItem.style.visibility = 'hidden';
+                galleryItem.style.opacity = '0';
             }
-            img.dataset.errorHandled = 'true';
-            
-            // If it's an AVIF file, try PNG version
-            if (originalSrc && originalSrc.includes('.avif')) {
-                const pngSrc = originalSrc.replace(/\.avif$/i, '.png');
-                img.src = pngSrc;
-                img.dataset.errorHandled = 'false'; // Allow one more try
-                img.onerror = function() {
-                    // If PNG also fails, use gray placeholder (not green)
-                    this.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
-                    this.onerror = null; // Prevent infinite loop
-                };
-            } else {
-                // Try alternative extensions
-                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
-                const baseSrc = originalSrc.replace(/\.[^.]+$/, '');
-                let tried = 0;
-                
-                function tryNext() {
-                    if (tried < extensions.length) {
-                        img.src = baseSrc + extensions[tried];
-                        tried++;
-                        img.onerror = tryNext;
-                    } else {
-                        // All extensions failed, use gray placeholder
-                        img.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
-                        img.onerror = null;
-                    }
-                }
-                
-                tryNext();
-            }
+            // Prevent any further error handling
+            img.onerror = null;
         }
 
         // Gallery Filter Function
