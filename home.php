@@ -202,6 +202,12 @@ if (isset($_POST['logout'])) {
             align-items: center;
             margin-right: 10px;
             visibility: visible !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            width: auto !important;
+            height: 26px !important;
         }
 
         .logo .brand-mark img {
@@ -213,6 +219,11 @@ if (isset($_POST['logout'])) {
             opacity: 1 !important;
             position: relative;
             z-index: 10;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         
         /* Force logo to display - override any conflicting styles */
@@ -222,6 +233,13 @@ if (isset($_POST['logout'])) {
             opacity: 1 !important;
             height: 26px !important;
             width: auto !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100px !important;
+            object-fit: contain !important;
         }
 
         .logo .logo-fallback {
@@ -1031,9 +1049,9 @@ if (isset($_POST['logout'])) {
         <div class="header-content">
             <?php if ($is_logged_in): ?>
             <a href="dashboard.php" class="logo" aria-label="Dwellscape Staycation">
-                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle;">
+                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='inline-block';">
+                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
                         <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </span>
@@ -1041,9 +1059,9 @@ if (isset($_POST['logout'])) {
             </a>
             <?php else: ?>
             <div class="logo" style="cursor: default; pointer-events: none;">
-                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle;">
+                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='inline-block';">
+                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
                         <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </span>
