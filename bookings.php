@@ -647,7 +647,7 @@ if (isset($_POST['logout'])) {
 
         .calendar-date .today-label {
             position: absolute;
-            bottom: 3px;
+            bottom: 18px;
             left: 50%;
             transform: translateX(-50%);
             background: #10b981;
