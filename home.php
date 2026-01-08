@@ -1584,12 +1584,21 @@ if (isset($_POST['logout'])) {
                             
                             // Use the redirect URL from response, or determine based on role
                             let redirectUrl = response.redirect;
+                            console.log('Response redirect:', response.redirect);
+                            console.log('Response role:', response.role);
+                            
                             if (!redirectUrl && response.role === 'admin') {
                                 redirectUrl = 'admin/admin.php';
                             } else if (!redirectUrl) {
                                 redirectUrl = 'dashboard.php';
                             }
-                            console.log('Login successful, redirecting to:', redirectUrl);
+                            
+                            // Force admin redirect if role is admin
+                            if (response.role === 'admin') {
+                                redirectUrl = 'admin/admin.php';
+                            }
+                            
+                            console.log('Final redirect URL:', redirectUrl);
                             
                             // Longer delay to ensure cookie is processed by browser
                             // Cookies set via JavaScript need time to be stored

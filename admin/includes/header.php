@@ -4,13 +4,29 @@
 
 // Handle logout
 if (isset($_POST['logout'])) {
+    require_once '../../config/auth.php';
+    clearAuthCookie(); // Clear cookie-based auth
     session_destroy();
     header('Location: ../home.php');
     exit();
 }
 
+// Check cookie-based authentication first, then fall back to session
+if (!isset($auth_user)) {
+    require_once '../../config/auth.php';
+    $auth_user = verifyAuthToken();
+    if ($auth_user) {
+        // Set session variables from cookie auth for compatibility
+        $_SESSION['user_id'] = $auth_user['user_id'];
+        $_SESSION['username'] = $auth_user['username'];
+        $_SESSION['email'] = $auth_user['email'];
+        $_SESSION['role'] = $auth_user['role'];
+        $_SESSION['is_admin'] = $auth_user['is_admin'];
+    }
+}
+
 // Redirect if not logged in - go to home page (which has login modal)
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) && !$auth_user) {
     if (!headers_sent()) {
         header('Location: ../home.php');
         exit();
@@ -21,24 +37,37 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Check if user is admin (check both role and is_admin for compatibility)
-try {
-    $stmt = $pdo->prepare("SELECT is_admin, role FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    
-    $is_admin = ($user['role'] === 'admin') || ($user['is_admin'] ?? false);
-    
-    if (!$user || !$is_admin) {
+$is_admin = false;
+if (isset($_SESSION['is_admin'])) {
+    $is_admin = $_SESSION['is_admin'];
+} elseif ($auth_user) {
+    $is_admin = $auth_user['is_admin'] || $auth_user['role'] === 'admin';
+} else {
+    try {
+        $stmt = $pdo->prepare("SELECT is_admin, role FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        
+        $is_admin = ($user['role'] === 'admin') || ($user['is_admin'] ?? false);
+        
+        if (!$user || !$is_admin) {
+            header('Location: ../dashboard.php');
+            exit();
+        }
+        
+        // Update session role if needed
+        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+            $_SESSION['role'] = 'admin';
+            $_SESSION['is_admin'] = true;
+        }
+    } catch(PDOException $e) {
         header('Location: ../dashboard.php');
         exit();
     }
-    
-    // Update session role if needed
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        $_SESSION['role'] = 'admin';
-        $_SESSION['is_admin'] = true;
-    }
-} catch(PDOException $e) {
+}
+
+// Final check - redirect non-admin users
+if (!$is_admin) {
     header('Location: ../dashboard.php');
     exit();
 }
