@@ -870,76 +870,17 @@ if (isset($_POST['logout'])) {
         });
 
         // Gallery Filter Function
-        // Handle image errors with AVIF to PNG fallback
+        // Handle image errors - simply hide the gallery item if image fails to load
         function handleImageError(img, originalSrc) {
-            // Prevent infinite loops
-            if (img.dataset.errorHandled === 'true') {
-                // Hide the image and its container if all attempts failed
-                img.style.display = 'none';
-                const galleryItem = img.closest('.gallery-item');
-                if (galleryItem) {
-                    galleryItem.style.display = 'none';
-                }
-                return;
+            // Immediately hide the entire gallery item
+            const galleryItem = img.closest('.gallery-item');
+            if (galleryItem) {
+                galleryItem.style.display = 'none';
+                galleryItem.style.visibility = 'hidden';
+                galleryItem.style.opacity = '0';
             }
-            img.dataset.errorHandled = 'true';
-            
-            // Fix path if it has ../pictures/ to pictures/
-            let fixedSrc = originalSrc.replace(/\.\.\/pictures\//g, 'pictures/');
-            
-            // If it's an AVIF file, try PNG version
-            if (fixedSrc && fixedSrc.includes('.avif')) {
-                const pngSrc = fixedSrc.replace(/\.avif$/i, '.png');
-                img.src = pngSrc;
-                img.dataset.errorHandled = 'false'; // Allow one more try
-                img.onerror = function() {
-                    // Try other extensions before giving up
-                    const extensions = ['.jpg', '.jpeg', '.webp', '.gif'];
-                    const baseSrc = fixedSrc.replace(/\.avif$/i, '');
-                    let tried = 0;
-                    
-                    function tryNextExt() {
-                        if (tried < extensions.length) {
-                            this.src = baseSrc + extensions[tried];
-                            tried++;
-                            this.onerror = tryNextExt;
-                        } else {
-                            // All attempts failed - hide the image
-                            this.style.display = 'none';
-                            const galleryItem = this.closest('.gallery-item');
-                            if (galleryItem) {
-                                galleryItem.style.display = 'none';
-                            }
-                            this.onerror = null;
-                        }
-                    }
-                    this.onerror = tryNextExt;
-                    tryNextExt.call(this);
-                };
-            } else {
-                // Try alternative extensions
-                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'];
-                const baseSrc = fixedSrc.replace(/\.[^.]+$/, '');
-                let tried = 0;
-                
-                function tryNext() {
-                    if (tried < extensions.length) {
-                        img.src = baseSrc + extensions[tried];
-                        tried++;
-                        img.onerror = tryNext;
-                    } else {
-                        // All extensions failed - hide the image instead of showing placeholder
-                        img.style.display = 'none';
-                        const galleryItem = img.closest('.gallery-item');
-                        if (galleryItem) {
-                            galleryItem.style.display = 'none';
-                        }
-                        img.onerror = null;
-                    }
-                }
-                
-                tryNext();
-            }
+            // Prevent any further error handling
+            img.onerror = null;
         }
 
         function filterGallery(category) {
