@@ -40,6 +40,22 @@
                 <a href="admin_suggestions.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'admin_suggestions.php') ? 'active' : ''; ?>">
                     <i class="fas fa-envelope"></i>
                     <span>View Suggestions</span>
+                    <?php
+                    // Count unread suggestions
+                    $unread_count = 0;
+                    if (isset($pdo)) {
+                        try {
+                            $stmt = $pdo->query("SELECT COUNT(*) as count FROM suggestions WHERE status = 'unread'");
+                            $result = $stmt->fetch();
+                            $unread_count = $result['count'] ?? 0;
+                        } catch(PDOException $e) {
+                            // Ignore errors
+                            $unread_count = 0;
+                        }
+                    }
+                    if ($unread_count > 0): ?>
+                        <span class="notification-badge"><?php echo $unread_count; ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
         </ul>

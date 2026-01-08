@@ -3941,7 +3941,7 @@ if (isset($_POST['logout'])) {
                     formData.append('email', email);
                     formData.append('message', message);
 
-                    fetch('save_suggestion.php', {
+                    fetch('api/save_suggestion.php', {
                         method: 'POST',
                         body: formData
                     })

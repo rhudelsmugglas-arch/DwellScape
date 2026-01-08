@@ -264,10 +264,47 @@ function viewSuggestion(id, name, email, message, status) {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: 'id=' + id
-        }).catch(err => console.error('Error:', err));
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update notification badge in sidebar
+                updateNotificationBadge();
+            }
+        })
+        .catch(err => console.error('Error:', err));
     }
     
     document.getElementById('suggestionModal').style.display = 'flex';
+}
+
+function updateNotificationBadge() {
+    // Fetch current unread count
+    fetch('get_unread_count.php')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.querySelector('.nav-link[href="admin_suggestions.php"] .notification-badge');
+            if (data.count > 0) {
+                if (badge) {
+                    badge.textContent = data.count;
+                } else {
+                    // Create badge if it doesn't exist
+                    const link = document.querySelector('.nav-link[href="admin_suggestions.php"]');
+                    if (link) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'notification-badge';
+                        newBadge.textContent = data.count;
+                        link.appendChild(newBadge);
+                    }
+                }
+            } else {
+                // Remove badge if no unread messages
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        })
+        .catch(err => console.error('Error updating badge:', err));
 }
 
 function closeSuggestionModal() {
