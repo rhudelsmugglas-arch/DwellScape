@@ -637,27 +637,29 @@ if (isset($_POST['logout'])) {
             font-size: 20px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .calendar-date .weekday {
             font-size: 11px;
             color: #6b7280;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .calendar-date .today-label {
             position: relative;
             display: inline-block;
-            margin: 3px auto;
+            margin: 2px auto;
             background: #10b981;
             color: white;
             font-size: 7px;
             font-weight: 600;
-            padding: 1px 4px;
-            border-radius: 3px;
+            padding: 2px 6px;
+            border-radius: 4px;
             white-space: nowrap;
-            line-height: 1.2;
+            line-height: 1.3;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .proceed-btn {
