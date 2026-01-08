@@ -94,7 +94,7 @@ try {
     $stmt = $pdo->query("SELECT SUM(amount) as total FROM transactions");
     $total_revenue = $stmt->fetch()['total'] ?? 0;
     
-    // Recent bookings (last 5)
+    // Recent bookings (last 5) - include all bookings regardless of payment status
     $stmt = $pdo->query("
         SELECT b.*, u.username 
         FROM bookings b 
@@ -104,7 +104,7 @@ try {
     ");
     $recent_bookings = $stmt->fetchAll();
     
-    // Recent transactions (last 5)
+    // Recent transactions (last 5) - include all transactions
     $stmt = $pdo->query("
         SELECT t.*, b.booking_id, u.username 
         FROM transactions t 

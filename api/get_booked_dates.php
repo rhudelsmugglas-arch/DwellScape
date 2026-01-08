@@ -14,13 +14,14 @@ if (!$current_user) {
 }
 
 try {
-    // Get all booked dates (checkin and checkout dates) where payment is paid
+    // Get all booked dates (checkin and checkout dates) where payment is paid or pending
+    // Include both paid and pending bookings to prevent double booking
     $stmt = $pdo->prepare("
         SELECT 
             checkin_date,
             checkout_date
         FROM bookings
-        WHERE payment_status = 'paid'
+        WHERE payment_status IN ('paid', 'pending')
         ORDER BY checkin_date ASC
     ");
     

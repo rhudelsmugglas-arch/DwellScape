@@ -149,8 +149,12 @@ try {
                     if (preg_match('/^https?:\/\//', $first_image)) {
                         $main_image = $first_image;
                     } else {
-                        // Local file - use relative path
-                        $main_image = $first_image;
+                        // Local file - ensure path is correct (should start with uploads/)
+                        if (strpos($first_image, 'uploads/') === 0) {
+                            $main_image = '../' . $first_image;
+                        } else {
+                            $main_image = '../uploads/' . $first_image;
+                        }
                     }
                 }
             }
@@ -165,7 +169,12 @@ try {
                         if (preg_match('/^https?:\/\//', $img)) {
                             $all_images[] = $img;
                         } else {
-                            $all_images[] = $img;
+                            // Local file - ensure path is correct
+                            if (strpos($img, 'uploads/') === 0) {
+                                $all_images[] = '../' . $img;
+                            } else {
+                                $all_images[] = '../uploads/' . $img;
+                            }
                         }
                     }
                 }

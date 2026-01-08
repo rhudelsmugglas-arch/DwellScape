@@ -3179,9 +3179,17 @@ if (isset($_POST['logout'])) {
             ).join('') + (remainingCount > 0 ? 
                 `<span class="amenity-tag amenity-tag-more">+${remainingCount} more</span>` : '');
 
+            // Handle image path - ensure local paths are correct
+            let roomImageSrc = room.image;
+            if (!room.image.startsWith('http') && !room.image.startsWith('../')) {
+                if (room.image.startsWith('uploads/')) {
+                    roomImageSrc = '../' + room.image;
+                }
+            }
+            
             return `
                 <div class="room-card" data-room-id="${room.id}">
-                    <img src="${room.image}" alt="${room.name}" class="room-image" onerror="this.src='https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=800&auto=format&fit=crop'">
+                    <img src="${roomImageSrc}" alt="${room.name}" class="room-image" onerror="this.src='https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=800&auto=format&fit=crop'">
                     <div class="room-content">
                         <h3 class="room-title">${room.name}</h3>
                         ${room.description ? `<p class="room-description">${room.description}</p>` : ''}
@@ -3658,11 +3666,29 @@ if (isset($_POST['logout'])) {
             let imagesHTML = '';
             if (room.images && room.images.length > 0) {
                 imagesHTML = room.images.map(img => {
-                    const imgSrc = img.startsWith('http') ? img : img;
+                    // Handle both URLs and local paths
+                    let imgSrc = img;
+                    if (!img.startsWith('http') && !img.startsWith('../')) {
+                        // If it's a local path without ../ prefix, add it
+                        if (img.startsWith('uploads/')) {
+                            imgSrc = '../' + img;
+                        } else {
+                            imgSrc = img;
+                        }
+                    }
                     return `<img src="${imgSrc}" alt="${room.name}" onerror="this.style.display='none'">`;
                 }).join('');
             } else if (room.image) {
-                const imgSrc = room.image.startsWith('http') ? room.image : room.image;
+                // Handle both URLs and local paths
+                let imgSrc = room.image;
+                if (!room.image.startsWith('http') && !room.image.startsWith('../')) {
+                    // If it's a local path without ../ prefix, add it
+                    if (room.image.startsWith('uploads/')) {
+                        imgSrc = '../' + room.image;
+                    } else {
+                        imgSrc = room.image;
+                    }
+                }
                 imagesHTML = `<img src="${imgSrc}" alt="${room.name}" onerror="this.style.display='none'">`;
             }
             
