@@ -207,7 +207,7 @@ if (isset($_POST['logout'])) {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 10px 0 0 !important;
         }
         
         /* Force logo to display - override any conflicting styles */
@@ -221,7 +221,7 @@ if (isset($_POST['logout'])) {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 10px 0 0 !important;
             max-width: 100px !important;
             object-fit: contain !important;
         }
@@ -4283,14 +4283,25 @@ if (isset($_POST['logout'])) {
             document.addEventListener('DOMContentLoaded', function() {
                 const logoImages = document.querySelectorAll('img[src*="dwellscape-logo"]');
                 logoImages.forEach(function(img) {
-                    // Always force display the image first - don't hide it
+                    // Remove any white background or border
                     img.style.setProperty('display', 'block', 'important');
                     img.style.setProperty('visibility', 'visible', 'important');
                     img.style.setProperty('opacity', '1', 'important');
                     img.style.setProperty('background', 'transparent', 'important');
+                    img.style.setProperty('background-color', 'transparent', 'important');
                     img.style.setProperty('border', 'none', 'important');
                     img.style.setProperty('padding', '0', 'important');
                     img.style.setProperty('margin', '0 10px 0 0', 'important');
+                    img.style.setProperty('box-shadow', 'none', 'important');
+                    
+                    // Ensure parent container has no white background
+                    const brandMark = img.closest('.brand-mark');
+                    if (brandMark) {
+                        brandMark.style.setProperty('background', 'transparent', 'important');
+                        brandMark.style.setProperty('background-color', 'transparent', 'important');
+                        brandMark.style.setProperty('border', 'none', 'important');
+                        brandMark.style.setProperty('padding', '0', 'important');
+                    }
                     
                     // Ensure fallback is hidden initially
                     const fallback = img.nextElementSibling;
@@ -4301,7 +4312,32 @@ if (isset($_POST['logout'])) {
                         fallback.style.setProperty('background', 'transparent', 'important');
                     }
                     
-                    // Only show fallback if image truly fails to load
+                    // Preload image to verify it exists
+                    const testImg = new Image();
+                    testImg.onload = function() {
+                        // Image exists and loaded, ensure it's visible
+                        img.style.setProperty('display', 'block', 'important');
+                        img.style.setProperty('visibility', 'visible', 'important');
+                        img.style.setProperty('opacity', '1', 'important');
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.setProperty('display', 'none', 'important');
+                        }
+                    };
+                    testImg.onerror = function() {
+                        // Image failed to load, hide image and show SVG fallback
+                        console.error('Logo image failed to load:', img.src);
+                        img.style.setProperty('display', 'none', 'important');
+                        img.style.setProperty('visibility', 'hidden', 'important');
+                        img.style.setProperty('opacity', '0', 'important');
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.setProperty('display', 'inline-block', 'important');
+                            fallback.style.setProperty('visibility', 'visible', 'important');
+                            fallback.style.setProperty('opacity', '1', 'important');
+                        }
+                    };
+                    testImg.src = img.src;
+                    
+                    // Also handle onerror for the actual image
                     img.onerror = function() {
                         console.error('Logo image failed to load:', this.src);
                         this.style.setProperty('display', 'none', 'important');
