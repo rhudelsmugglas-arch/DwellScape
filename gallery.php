@@ -719,12 +719,11 @@ if (isset($_POST['logout'])) {
                             // Paths that start with pictures/ (relative to app root)
                             elseif (preg_match('~^pictures/~i', $raw_url)) {
                                 // From gallery.php (root), pictures folder is at pictures/
-                                // But we need ../pictures/ for web access
-                                $image_url = '../pictures/' . $filename;
+                                $image_url = 'pictures/' . $filename;
                             }
-                            // Paths that start with ../pictures/ (already relative)
+                            // Paths that start with ../pictures/ (already relative) - convert to pictures/
                             elseif (preg_match('~^\.\./pictures/~i', $raw_url)) {
-                                $image_url = $raw_url;
+                                $image_url = 'pictures/' . $filename;
                             }
                             // Paths that start with uploads/
                             elseif (preg_match('~^uploads/~i', $raw_url)) {
@@ -743,17 +742,18 @@ if (isset($_POST['logout'])) {
                             }
                             // Plain filename → assume it's in pictures folder
                             elseif (!empty($filename) && preg_match('~\.(jpg|jpeg|png|gif|webp|avif)$~i', $filename)) {
-                                $image_url = '../pictures/' . $filename;
+                                $image_url = 'pictures/' . $filename;
                             }
                             // Fallback: try to extract filename
                             else {
-                                $image_url = '../pictures/' . $filename;
+                                $image_url = 'pictures/' . $filename;
                             }
                             
                             // Verify file exists and try alternative extensions if needed
                             if (!preg_match('~^https?://~i', $image_url)) {
-                                // Get local file path
-                                $local_path = str_replace('../pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
+                                // Get local file path - gallery.php is in root, so pictures/ is directly accessible
+                                $local_path = str_replace('pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
+                                $local_path = str_replace('../pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $local_path);
                                 $local_path = str_replace('../uploads/', __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR, $local_path);
                                 
                                 // Normalize path separators
@@ -770,29 +770,41 @@ if (isset($_POST['logout'])) {
                                         if (file_exists($test_path)) {
                                             // Update image_url to use found extension
                                             $found_filename = pathinfo($local_path, PATHINFO_FILENAME) . '.' . $ext;
-                                            $image_url = '../pictures/' . $found_filename;
+                                            $image_url = 'pictures/' . $found_filename;
                                             $found = true;
                                             break;
                                         }
                                     }
                                     
-                                    // Also try case-insensitive filename matching
+                                    // Also try case-insensitive filename matching and handle spaces
                                     if (!$found) {
                                         $pictures_dir = __DIR__ . DIRECTORY_SEPARATOR . 'pictures';
                                         if (is_dir($pictures_dir)) {
                                             $files = scandir($pictures_dir);
                                             $base_name = pathinfo($filename, PATHINFO_FILENAME);
+                                            // Remove spaces and special chars for comparison
+                                            $base_name_clean = preg_replace('/[^a-z0-9]/i', '', $base_name);
+                                            
                                             foreach ($files as $file) {
                                                 if ($file !== '.' && $file !== '..') {
                                                     $file_base = pathinfo($file, PATHINFO_FILENAME);
-                                                    if (strcasecmp($base_name, $file_base) === 0) {
-                                                        $image_url = '../pictures/' . $file;
+                                                    $file_base_clean = preg_replace('/[^a-z0-9]/i', '', $file_base);
+                                                    
+                                                    // Match by cleaned name or exact case-insensitive match
+                                                    if (strcasecmp($base_name_clean, $file_base_clean) === 0 || 
+                                                        strcasecmp($base_name, $file_base) === 0) {
+                                                        $image_url = 'pictures/' . $file;
                                                         $found = true;
                                                         break;
                                                     }
                                                 }
                                             }
                                         }
+                                    }
+                                } else {
+                                    // File exists, ensure URL uses correct path format
+                                    if (strpos($image_url, '../pictures/') === 0) {
+                                        $image_url = str_replace('../pictures/', 'pictures/', $image_url);
                                     }
                                 }
                             }
@@ -862,24 +874,52 @@ if (isset($_POST['logout'])) {
         function handleImageError(img, originalSrc) {
             // Prevent infinite loops
             if (img.dataset.errorHandled === 'true') {
+                // Hide the image and its container if all attempts failed
+                img.style.display = 'none';
+                const galleryItem = img.closest('.gallery-item');
+                if (galleryItem) {
+                    galleryItem.style.display = 'none';
+                }
                 return;
             }
             img.dataset.errorHandled = 'true';
             
+            // Fix path if it has ../pictures/ to pictures/
+            let fixedSrc = originalSrc.replace(/\.\.\/pictures\//g, 'pictures/');
+            
             // If it's an AVIF file, try PNG version
-            if (originalSrc && originalSrc.includes('.avif')) {
-                const pngSrc = originalSrc.replace(/\.avif$/i, '.png');
+            if (fixedSrc && fixedSrc.includes('.avif')) {
+                const pngSrc = fixedSrc.replace(/\.avif$/i, '.png');
                 img.src = pngSrc;
                 img.dataset.errorHandled = 'false'; // Allow one more try
                 img.onerror = function() {
-                    // If PNG also fails, use gray placeholder (not green)
-                    this.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
-                    this.onerror = null; // Prevent infinite loop
+                    // Try other extensions before giving up
+                    const extensions = ['.jpg', '.jpeg', '.webp', '.gif'];
+                    const baseSrc = fixedSrc.replace(/\.avif$/i, '');
+                    let tried = 0;
+                    
+                    function tryNextExt() {
+                        if (tried < extensions.length) {
+                            this.src = baseSrc + extensions[tried];
+                            tried++;
+                            this.onerror = tryNextExt;
+                        } else {
+                            // All attempts failed - hide the image
+                            this.style.display = 'none';
+                            const galleryItem = this.closest('.gallery-item');
+                            if (galleryItem) {
+                                galleryItem.style.display = 'none';
+                            }
+                            this.onerror = null;
+                        }
+                    }
+                    this.onerror = tryNextExt;
+                    tryNextExt.call(this);
                 };
             } else {
                 // Try alternative extensions
-                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
-                const baseSrc = originalSrc.replace(/\.[^.]+$/, '');
+                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'];
+                const baseSrc = fixedSrc.replace(/\.[^.]+$/, '');
                 let tried = 0;
                 
                 function tryNext() {
@@ -888,8 +928,12 @@ if (isset($_POST['logout'])) {
                         tried++;
                         img.onerror = tryNext;
                     } else {
-                        // All extensions failed, use gray placeholder
-                        img.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
+                        // All extensions failed - hide the image instead of showing placeholder
+                        img.style.display = 'none';
+                        const galleryItem = img.closest('.gallery-item');
+                        if (galleryItem) {
+                            galleryItem.style.display = 'none';
+                        }
                         img.onerror = null;
                     }
                 }
