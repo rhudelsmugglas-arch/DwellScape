@@ -750,6 +750,7 @@ if (isset($_POST['logout'])) {
                             }
                             
                             // Verify file exists and try alternative extensions if needed
+                            $file_exists = false;
                             if (!preg_match('~^https?://~i', $image_url)) {
                                 // Get local file path - gallery.php is in root, so pictures/ is directly accessible
                                 $local_path = str_replace('pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
@@ -759,11 +760,16 @@ if (isset($_POST['logout'])) {
                                 // Normalize path separators
                                 $local_path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $local_path);
                                 
-                                if (!file_exists($local_path)) {
+                                if (file_exists($local_path)) {
+                                    $file_exists = true;
+                                    // File exists, ensure URL uses correct path format
+                                    if (strpos($image_url, '../pictures/') === 0) {
+                                        $image_url = str_replace('../pictures/', 'pictures/', $image_url);
+                                    }
+                                } else {
                                     // Try alternative extensions (AVIF → PNG, etc.)
                                     $base_path = pathinfo($local_path, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($local_path, PATHINFO_FILENAME);
                                     $extensions = ['avif', 'png', 'jpg', 'jpeg', 'webp', 'gif'];
-                                    $found = false;
                                     
                                     foreach ($extensions as $ext) {
                                         $test_path = $base_path . '.' . $ext;
@@ -771,13 +777,13 @@ if (isset($_POST['logout'])) {
                                             // Update image_url to use found extension
                                             $found_filename = pathinfo($local_path, PATHINFO_FILENAME) . '.' . $ext;
                                             $image_url = 'pictures/' . $found_filename;
-                                            $found = true;
+                                            $file_exists = true;
                                             break;
                                         }
                                     }
                                     
                                     // Also try case-insensitive filename matching and handle spaces
-                                    if (!$found) {
+                                    if (!$file_exists) {
                                         $pictures_dir = __DIR__ . DIRECTORY_SEPARATOR . 'pictures';
                                         if (is_dir($pictures_dir)) {
                                             $files = scandir($pictures_dir);
@@ -794,19 +800,22 @@ if (isset($_POST['logout'])) {
                                                     if (strcasecmp($base_name_clean, $file_base_clean) === 0 || 
                                                         strcasecmp($base_name, $file_base) === 0) {
                                                         $image_url = 'pictures/' . $file;
-                                                        $found = true;
+                                                        $file_exists = true;
                                                         break;
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                } else {
-                                    // File exists, ensure URL uses correct path format
-                                    if (strpos($image_url, '../pictures/') === 0) {
-                                        $image_url = str_replace('../pictures/', 'pictures/', $image_url);
-                                    }
                                 }
+                            } else {
+                                // For external URLs, assume they exist
+                                $file_exists = true;
+                            }
+                            
+                            // Skip this gallery item if file doesn't exist
+                            if (!$file_exists) {
+                                continue;
                             }
 
                             $image_url = htmlspecialchars(str_replace('\\', '/', $image_url));
@@ -816,7 +825,7 @@ if (isset($_POST['logout'])) {
                             $alt_text = htmlspecialchars($image['title'] . ' - ' . $description);
                         ?>
                         <div class="gallery-item" data-category="<?php echo $category; ?>" onclick="openGalleryModal('<?php echo $image_url; ?>', '<?php echo $title; ?>', '<?php echo $description; ?>')">
-                            <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="handleImageError(this, '<?php echo addslashes($image_url); ?>')" loading="lazy">
+                            <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="this.closest('.gallery-item').style.display='none';" loading="lazy">
                             <div class="gallery-item-icon">
                                 <i class="fas fa-expand"></i>
                             </div>
@@ -870,18 +879,21 @@ if (isset($_POST['logout'])) {
         });
 
         // Gallery Filter Function
-        // Handle image errors - simply hide the gallery item if image fails to load
-        function handleImageError(img, originalSrc) {
-            // Immediately hide the entire gallery item
-            const galleryItem = img.closest('.gallery-item');
-            if (galleryItem) {
-                galleryItem.style.display = 'none';
-                galleryItem.style.visibility = 'hidden';
-                galleryItem.style.opacity = '0';
-            }
-            // Prevent any further error handling
-            img.onerror = null;
-        }
+        // Hide gallery items immediately if images fail to load (no error messages)
+        document.addEventListener('DOMContentLoaded', function() {
+            const galleryImages = document.querySelectorAll('.gallery-item img');
+            galleryImages.forEach(function(img) {
+                img.onerror = function() {
+                    const galleryItem = this.closest('.gallery-item');
+                    if (galleryItem) {
+                        galleryItem.style.display = 'none';
+                        galleryItem.style.visibility = 'hidden';
+                        galleryItem.style.opacity = '0';
+                    }
+                    this.onerror = null; // Prevent infinite loops
+                };
+            });
+        });
 
         function filterGallery(category) {
             // Update active button
