@@ -208,6 +208,7 @@ if (isset($_POST['logout'])) {
             padding: 0 !important;
             width: auto !important;
             height: 26px !important;
+            min-width: 26px;
         }
 
         .logo .brand-mark img {
@@ -1050,7 +1051,7 @@ if (isset($_POST['logout'])) {
             <?php if ($is_logged_in): ?>
             <a href="dashboard.php" class="logo" aria-label="Dwellscape Staycation">
                 <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='inline-block';">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
                     <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
                         <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -1060,7 +1061,7 @@ if (isset($_POST['logout'])) {
             <?php else: ?>
             <div class="logo" style="cursor: default; pointer-events: none;">
                 <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback) fallback.style.display='inline-block';">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
                     <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
                         <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -1422,80 +1423,46 @@ if (isset($_POST['logout'])) {
             // Initialize first slide immediately
             setActiveSlide(0);
             
-            // Force logo images to display and handle corrupted files
+            // Force logo images to display - always show the image first
             document.addEventListener('DOMContentLoaded', function() {
                 const logoImages = document.querySelectorAll('img[src*="dwellscape-logo"]');
                 logoImages.forEach(function(img) {
-                    // Force display
-                    img.style.display = 'block';
-                    img.style.visibility = 'visible';
-                    img.style.opacity = '1';
+                    // Always force display the image first - don't hide it
+                    img.style.setProperty('display', 'block', 'important');
+                    img.style.setProperty('visibility', 'visible', 'important');
+                    img.style.setProperty('opacity', '1', 'important');
                     
-                    // Check if logo file is valid (not corrupted)
-                    fetch(img.src, { method: 'HEAD' })
-                        .then(response => {
-                            if (response.ok) {
-                                return response.headers.get('content-length');
-                            }
-                            throw new Error('File not found');
-                        })
-                        .then(contentLength => {
-                            // If file is too small (likely corrupted), use a placeholder or SVG
-                            if (parseInt(contentLength) < 1000) {
-                                // Logo file is corrupted - showing SVG fallback (this is expected)
-                                // console.warn('Logo file appears corrupted (' + contentLength + ' bytes), showing SVG fallback immediately');
-                                img.style.display = 'none';
-                                img.style.visibility = 'hidden';
-                                img.style.opacity = '0';
-                                const fallback = img.nextElementSibling;
-                                if (fallback && fallback.classList.contains('logo-fallback')) {
-                                    fallback.style.display = 'inline-block';
-                                    fallback.style.visibility = 'visible';
-                                    fallback.style.opacity = '1';
-                                }
-                                return;
-                            } else {
-                                // File seems valid, try to load it
-                                const testImg = new Image();
-                                testImg.onload = function() {
-                                    img.src = img.src; // Reload if needed
-                                    console.log('Logo image loaded successfully:', img.src);
-                                };
-                                testImg.onerror = function() {
-                                    console.error('Logo image failed to load:', img.src);
-                                    img.style.display = 'none';
-                                    img.style.visibility = 'hidden';
-                                    img.style.opacity = '0';
-                                    const fallback = img.nextElementSibling;
-                                    if (fallback && fallback.classList.contains('logo-fallback')) {
-                                        fallback.style.display = 'inline-block';
-                                        fallback.style.visibility = 'visible';
-                                        fallback.style.opacity = '1';
-                                    }
-                                };
-                                testImg.src = img.src;
-                            }
-                        })
-                        .catch(() => {
-                            // Can't check file, try to load anyway
-                            const testImg = new Image();
-                            testImg.onload = function() {
-                                console.log('Logo image loaded:', img.src);
-                            };
-                            testImg.onerror = function() {
-                                console.error('Logo image failed to load:', img.src);
-                                img.style.display = 'none';
-                                img.style.visibility = 'hidden';
-                                img.style.opacity = '0';
-                                const fallback = img.nextElementSibling;
-                                if (fallback && fallback.classList.contains('logo-fallback')) {
-                                    fallback.style.display = 'inline-block';
-                                    fallback.style.visibility = 'visible';
-                                    fallback.style.opacity = '1';
-                                }
-                            };
-                            testImg.src = img.src;
-                        });
+                    // Ensure fallback is hidden initially
+                    const fallback = img.nextElementSibling;
+                    if (fallback && fallback.classList.contains('logo-fallback')) {
+                        fallback.style.display = 'none';
+                    }
+                    
+                    // Only show fallback if image truly fails to load
+                    img.onerror = function() {
+                        console.error('Logo image failed to load:', this.src);
+                        this.style.display = 'none';
+                        const fallback = this.nextElementSibling;
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.display = 'inline-block';
+                            fallback.style.visibility = 'visible';
+                            fallback.style.opacity = '1';
+                        }
+                    };
+                    
+                    // Verify image loads successfully
+                    img.onload = function() {
+                        console.log('Logo image loaded successfully:', this.src);
+                        // Ensure image is visible
+                        this.style.setProperty('display', 'block', 'important');
+                        this.style.setProperty('visibility', 'visible', 'important');
+                        this.style.setProperty('opacity', '1', 'important');
+                        // Hide fallback if image loads
+                        const fallback = this.nextElementSibling;
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.display = 'none';
+                        }
+                    };
                 });
             });
 
