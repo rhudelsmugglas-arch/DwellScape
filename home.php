@@ -184,39 +184,104 @@ if (isset($_POST['logout'])) {
         .logo {
             display: flex;
             align-items: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
             text-decoration: none;
-            transition: transform 0.2s ease, opacity 0.3s ease;
-        }
-
-        .logo:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
+            transition: transform 0.2s ease, color 0.3s ease;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .header.scrolled .logo {
-            opacity: 1;
+            color: #7a6a4f;
+            text-shadow: none;
         }
 
-        .logo .logo-image {
+        .logo .brand-mark {
+            display: inline-flex !important;
+            align-items: center;
+            margin-right: 10px;
+            visibility: visible !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            width: auto !important;
+            height: 26px !important;
+            min-width: 26px;
+        }
+
+        .logo .brand-mark img {
+            height: 26px;
+            width: auto;
+            object-fit: contain;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
-            height: 40px !important;
-            width: auto !important;
-            max-width: 300px !important;
-            object-fit: contain !important;
+            position: relative;
+            z-index: 10;
             background: transparent !important;
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
             margin: 0 !important;
         }
+        
+        /* Force logo to display - override any conflicting styles */
+        .logo img[src*="dwellscape-logo"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: 26px !important;
+            width: auto !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100px !important;
+            object-fit: contain !important;
+        }
 
-        @media (max-width: 768px) {
-            .logo .logo-image {
-                height: 32px !important;
-                max-width: 200px !important;
-            }
+        .logo .logo-fallback {
+            display: none;
+            height: 26px;
+            width: 26px;
+            visibility: visible !important;
+        }
+        
+        /* Show SVG fallback when image fails */
+        .logo .brand-mark:has(img[style*="display: none"]) .logo-fallback,
+        .logo img[style*="display: none"] + .logo-fallback {
+            display: inline-block !important;
+            visibility: visible !important;
+        }
+
+        .logo .logo-text {
+            display: inline-block;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: inherit;
+            font-size: 21px;
+            line-height: 1;
+            margin-right: 0;
+            white-space: nowrap;
+        }
+
+        .logo .logo-text small {
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 3px;
+            margin-left: 8px;
+            color: #C3B091;
+        }
+
+        .header.scrolled .logo .logo-text small {
+            color: #9A8B6F;
+        }
+
+        .logo:hover .logo-text { 
+            opacity: 0.9;
         }
 
         .header-content nav {
@@ -985,11 +1050,23 @@ if (isset($_POST['logout'])) {
         <div class="header-content">
             <?php if ($is_logged_in): ?>
             <a href="dashboard.php" class="logo" aria-label="Dwellscape Staycation">
-                <img src="pictures/dwellscape-logo.png" alt="Dwellscape Staycation Logo" loading="eager" class="logo-image" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 40px; width: auto; max-width: 300px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none';">
+                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
+                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
+                        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span class="logo-text">DWELLSCAPE <small>STAYCATION</small></span>
             </a>
             <?php else: ?>
             <div class="logo" style="cursor: default; pointer-events: none;">
-                <img src="pictures/dwellscape-logo.png" alt="Dwellscape Staycation Logo" loading="eager" class="logo-image" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 40px; width: auto; max-width: 300px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none';">
+                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
+                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
+                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
+                        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span class="logo-text">DWELLSCAPE <small>STAYCATION</small></span>
             </div>
             <?php endif; ?>
             
@@ -1348,16 +1425,30 @@ if (isset($_POST['logout'])) {
             
             // Force logo images to display - always show the image first
             document.addEventListener('DOMContentLoaded', function() {
-                const logoImages = document.querySelectorAll('img.logo-image, img[src*="dwellscape-logo"]');
+                const logoImages = document.querySelectorAll('img[src*="dwellscape-logo"]');
                 logoImages.forEach(function(img) {
                     // Always force display the image first - don't hide it
                     img.style.setProperty('display', 'block', 'important');
                     img.style.setProperty('visibility', 'visible', 'important');
                     img.style.setProperty('opacity', '1', 'important');
-                    img.style.setProperty('background', 'transparent', 'important');
-                    img.style.setProperty('border', 'none', 'important');
-                    img.style.setProperty('padding', '0', 'important');
-                    img.style.setProperty('margin', '0', 'important');
+                    
+                    // Ensure fallback is hidden initially
+                    const fallback = img.nextElementSibling;
+                    if (fallback && fallback.classList.contains('logo-fallback')) {
+                        fallback.style.display = 'none';
+                    }
+                    
+                    // Only show fallback if image truly fails to load
+                    img.onerror = function() {
+                        console.error('Logo image failed to load:', this.src);
+                        this.style.display = 'none';
+                        const fallback = this.nextElementSibling;
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.display = 'inline-block';
+                            fallback.style.visibility = 'visible';
+                            fallback.style.opacity = '1';
+                        }
+                    };
                     
                     // Verify image loads successfully
                     img.onload = function() {
@@ -1366,15 +1457,10 @@ if (isset($_POST['logout'])) {
                         this.style.setProperty('display', 'block', 'important');
                         this.style.setProperty('visibility', 'visible', 'important');
                         this.style.setProperty('opacity', '1', 'important');
-                    };
-                    
-                    // Handle image load errors
-                    img.onerror = function() {
-                        console.error('Logo image failed to load:', this.src);
-                        // Try alternative path if using pictures folder
-                        if (this.src.includes('pictures/dwellscape-logo.png')) {
-                            const altPath = this.src.replace('pictures/', 'assets/img/');
-                            this.src = altPath;
+                        // Hide fallback if image loads
+                        const fallback = this.nextElementSibling;
+                        if (fallback && fallback.classList.contains('logo-fallback')) {
+                            fallback.style.display = 'none';
                         }
                     };
                 });
