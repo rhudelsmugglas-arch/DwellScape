@@ -637,13 +637,13 @@ if (isset($_POST['logout'])) {
             font-size: 20px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .calendar-date .weekday {
             font-size: 11px;
             color: #6b7280;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .calendar-date .today-label {
