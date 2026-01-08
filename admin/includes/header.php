@@ -4,16 +4,43 @@
 
 // Handle logout
 if (isset($_POST['logout'])) {
-    require_once '../../config/auth.php';
-    clearAuthCookie(); // Clear cookie-based auth
-    session_destroy();
-    header('Location: ../home.php');
-    exit();
+    // Ensure session is started
+    if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Include auth.php with correct path (from admin/includes/ to config/)
+    require_once '../config/auth.php';
+    
+    // Clear cookie-based auth
+    clearAuthCookie();
+    
+    // Destroy session
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        $_SESSION = array(); // Clear session data
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+    }
+    
+    // Redirect to home page
+    if (!headers_sent()) {
+        header('Location: ../home.php');
+        exit();
+    } else {
+        echo '<script>window.location.href = "../home.php";</script>';
+        exit();
+    }
 }
 
 // Check cookie-based authentication first, then fall back to session
 if (!isset($auth_user)) {
-    require_once '../../config/auth.php';
+    require_once '../config/auth.php';
     $auth_user = verifyAuthToken();
     if ($auth_user) {
         // Set session variables from cookie auth for compatibility
