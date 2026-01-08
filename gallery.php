@@ -362,6 +362,11 @@ if (isset($_POST['logout'])) {
             object-fit: cover;
             display: block;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f3f4f6; /* Light gray background for missing images */
+        }
+        
+        .gallery-item img[src*="data:image/svg"] {
+            background: #e5e7eb; /* Slightly darker gray for SVG placeholders */
         }
 
         .gallery-item-overlay {
@@ -697,6 +702,10 @@ if (isset($_POST['logout'])) {
                             // Normalize image path so local files in /pictures or /uploads/gallery work correctly
                             $raw_url = trim($image['image_url'] ?? '');
                             
+                            if (empty($raw_url)) {
+                                continue; // Skip empty URLs
+                            }
+                            
                             // Handle AVIF fallback to PNG if AVIF file doesn't exist
                             if (preg_match('/\.avif$/i', $raw_url)) {
                                 $avif_path = str_replace(['../', 'pictures/'], '', $raw_url);
@@ -715,63 +724,90 @@ if (isset($_POST['logout'])) {
                                 }
                             }
 
+                            // Resolve path to web-accessible URL
+                            $image_url = '';
+                            
                             // Already a full URL → leave as is
                             if (preg_match('~^https?://~i', $raw_url)) {
-                                // no change - keep as is
+                                $image_url = $raw_url;
                             }
-                            // If it's a Windows absolute path (e.g., C:\xampp\htdocs\pictures\img.jpg),
-                            // strip everything up to /pictures or /uploads to convert it to a web path.
-                            elseif (preg_match('~[\\\\/]pictures[\\\\/](.+)$~i', $raw_url, $m)) {
-                                $raw_url = '../pictures/' . str_replace('\\', '/', $m[1]);
-                            }
-                            elseif (preg_match('~[\\\\/]uploads[\\\\/](gallery[\\\\/].+)$~i', $raw_url, $m)) {
-                                $raw_url = '../uploads/' . str_replace('\\', '/', $m[1]);
-                            }
-                            // Paths that already point to /pictures (absolute)
-                            elseif (preg_match('~^/pictures/~i', $raw_url)) {
-                                // Convert to relative path
-                                $raw_url = '..' . $raw_url;
-                            }
-                            // Paths that start with pictures/ (relative)
+                            // Paths that start with pictures/ (relative to app root)
                             elseif (preg_match('~^pictures/~i', $raw_url)) {
-                                // Convert to relative path from gallery.php
-                                $raw_url = '../' . $raw_url;
+                                // From gallery.php, need to go up one level
+                                $image_url = '../' . $raw_url;
                             }
-                            // If still no valid path, try to construct from basename
-                            elseif (!empty($raw_url) && !preg_match('~^https?://~i', $raw_url) && !preg_match('~^\.\.?/~', $raw_url)) {
-                                // Assume it's a filename in pictures folder
-                                $raw_url = '../pictures/' . basename($raw_url);
-                            }
-                            // Paths that start with ../pictures/
+                            // Paths that start with ../pictures/ (already relative)
                             elseif (preg_match('~^\.\./pictures/~i', $raw_url)) {
-                                // Already correct relative path
-                                // no change
+                                $image_url = $raw_url;
                             }
-                            // Paths that already point to uploads/gallery relative to app root
+                            // Paths that start with uploads/
                             elseif (preg_match('~^uploads/~i', $raw_url)) {
-                                // make it relative
-                                $raw_url = '../' . $raw_url;
+                                $image_url = '../' . $raw_url;
                             }
-                            // Plain filename → assume it lives in /pictures
+                            // Paths that start with ../uploads/
+                            elseif (preg_match('~^\.\./uploads/~i', $raw_url)) {
+                                $image_url = $raw_url;
+                            }
+                            // If it's a Windows absolute path, extract filename
+                            elseif (preg_match('~[\\\\/]pictures[\\\\/](.+)$~i', $raw_url, $m)) {
+                                $image_url = '../pictures/' . str_replace('\\', '/', $m[1]);
+                            }
+                            elseif (preg_match('~[\\\\/]uploads[\\\\/](.+)$~i', $raw_url, $m)) {
+                                $image_url = '../uploads/' . str_replace('\\', '/', $m[1]);
+                            }
+                            // Absolute path starting with /pictures
+                            elseif (preg_match('~^/pictures/~i', $raw_url)) {
+                                $image_url = '..' . $raw_url;
+                            }
+                            // Plain filename → assume it's in pictures folder
                             elseif (!empty($raw_url) && !preg_match('~[\\\\/]~', $raw_url)) {
-                                $raw_url = '../pictures/' . $raw_url;
+                                $image_url = '../pictures/' . $raw_url;
                             }
-                            // If it contains pictures but doesn't match above patterns
-                            elseif (!empty($raw_url) && stripos($raw_url, 'pictures') !== false) {
-                                // Try to extract filename and prepend ../pictures/
-                                if (preg_match('~([^\\\\/]+\.(jpg|jpeg|png|gif|webp|avif))$~i', $raw_url, $m)) {
-                                    $raw_url = '../pictures/' . $m[1];
+                            // Try to extract filename from any path
+                            else {
+                                $filename = basename($raw_url);
+                                if (!empty($filename) && preg_match('~\.(jpg|jpeg|png|gif|webp|avif)$~i', $filename)) {
+                                    $image_url = '../pictures/' . $filename;
+                                } else {
+                                    $image_url = $raw_url; // Fallback to original
+                                }
+                            }
+                            
+                            // Verify file exists for local paths (not external URLs)
+                            if (!preg_match('~^https?://~i', $image_url)) {
+                                $local_path = str_replace('../pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
+                                $local_path = str_replace('../uploads/', __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR, $local_path);
+                                
+                                if (!file_exists($local_path)) {
+                                    // Try alternative extensions
+                                    $base_path = pathinfo($local_path, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($local_path, PATHINFO_FILENAME);
+                                    $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+                                    $found = false;
+                                    
+                                    foreach ($extensions as $ext) {
+                                        $test_path = $base_path . '.' . $ext;
+                                        if (file_exists($test_path)) {
+                                            $image_url = str_replace(basename($image_url), basename($test_path), $image_url);
+                                            $found = true;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // If still not found, mark as missing
+                                    if (!$found) {
+                                        // Will be handled by onerror handler
+                                    }
                                 }
                             }
 
-                            $image_url = htmlspecialchars(str_replace('\\', '/', $raw_url));
+                            $image_url = htmlspecialchars(str_replace('\\', '/', $image_url));
                             $title = htmlspecialchars($image['title']);
                             $description = htmlspecialchars($image['description'] ?? '');
                             $category = htmlspecialchars($image['category']);
                             $alt_text = htmlspecialchars($image['title'] . ' - ' . $description);
                         ?>
                         <div class="gallery-item" data-category="<?php echo $category; ?>" onclick="openGalleryModal('<?php echo $image_url; ?>', '<?php echo $title; ?>', '<?php echo $description; ?>')">
-                            <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="handleImageError(this, '<?php echo addslashes($image_url); ?>')">
+                            <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="handleImageError(this, '<?php echo addslashes($image_url); ?>')" loading="lazy">
                             <div class="gallery-item-icon">
                                 <i class="fas fa-expand"></i>
                             </div>
@@ -827,19 +863,41 @@ if (isset($_POST['logout'])) {
         // Gallery Filter Function
         // Handle image errors with AVIF to PNG fallback
         function handleImageError(img, originalSrc) {
+            // Prevent infinite loops
+            if (img.dataset.errorHandled === 'true') {
+                return;
+            }
+            img.dataset.errorHandled = 'true';
+            
             // If it's an AVIF file, try PNG version
             if (originalSrc && originalSrc.includes('.avif')) {
                 const pngSrc = originalSrc.replace(/\.avif$/i, '.png');
                 img.src = pngSrc;
+                img.dataset.errorHandled = 'false'; // Allow one more try
                 img.onerror = function() {
-                    // If PNG also fails, use placeholder
-                    this.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                    // If PNG also fails, use gray placeholder (not green)
+                    this.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
                     this.onerror = null; // Prevent infinite loop
                 };
             } else {
-                // For non-AVIF images, use placeholder
-                img.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
-                img.onerror = null; // Prevent infinite loop
+                // Try alternative extensions
+                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+                const baseSrc = originalSrc.replace(/\.[^.]+$/, '');
+                let tried = 0;
+                
+                function tryNext() {
+                    if (tried < extensions.length) {
+                        img.src = baseSrc + extensions[tried];
+                        tried++;
+                        img.onerror = tryNext;
+                    } else {
+                        // All extensions failed, use gray placeholder
+                        img.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
+                        img.onerror = null;
+                    }
+                }
+                
+                tryNext();
             }
         }
 

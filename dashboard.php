@@ -1927,6 +1927,11 @@ if (isset($_POST['logout'])) {
             object-fit: cover;
             display: block;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f3f4f6; /* Light gray background for missing images */
+        }
+        
+        .gallery-item img[src*="data:image/svg"] {
+            background: #e5e7eb; /* Slightly darker gray for SVG placeholders */
         }
 
         .gallery-item-overlay {
@@ -3209,6 +3214,27 @@ if (isset($_POST['logout'])) {
                                     continue; // Skip empty URLs
                                 }
                                 
+                                // Handle AVIF fallback to PNG if AVIF file doesn't exist
+                                if (preg_match('/\.avif$/i', $raw_url)) {
+                                    $avif_path = str_replace(['../', 'pictures/'], '', $raw_url);
+                                    $avif_full_path = __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR . basename($avif_path);
+                                    
+                                    // If AVIF doesn't exist, try PNG version
+                                    if (!file_exists($avif_full_path)) {
+                                        $png_url = preg_replace('/\.avif$/i', '.png', $raw_url);
+                                        $png_path = str_replace(['../', 'pictures/'], '', $png_url);
+                                        $png_full_path = __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR . basename($png_path);
+                                        
+                                        // If PNG exists, use it instead
+                                        if (file_exists($png_full_path)) {
+                                            $raw_url = $png_url;
+                                        }
+                                    }
+                                }
+                                
+                                // Resolve path to web-accessible URL (dashboard.php is at root)
+                                $image_url = '';
+                                
                                 // Already a full URL → leave as is
                                 if (preg_match('~^https?://~i', $raw_url)) {
                                     $image_url = $raw_url;
@@ -3225,13 +3251,20 @@ if (isset($_POST['logout'])) {
                                 }
                                 // Paths that start with uploads/
                                 elseif (preg_match('~^uploads/~i', $raw_url)) {
-                                    // Convert uploads/ to ../uploads/
-                                    $image_url = '../' . $raw_url;
+                                    // Keep as is from root
+                                    $image_url = $raw_url;
                                 }
                                 // Paths that start with ../uploads/
                                 elseif (preg_match('~^\.\./uploads/~i', $raw_url)) {
-                                    // Already correct
-                                    $image_url = $raw_url;
+                                    // Convert to relative path from root
+                                    $image_url = str_replace('../uploads/', 'uploads/', $raw_url);
+                                }
+                                // If it's a Windows absolute path, extract filename
+                                elseif (preg_match('~[\\\\/]pictures[\\\\/](.+)$~i', $raw_url, $m)) {
+                                    $image_url = 'pictures/' . str_replace('\\', '/', $m[1]);
+                                }
+                                elseif (preg_match('~[\\\\/]uploads[\\\\/](.+)$~i', $raw_url, $m)) {
+                                    $image_url = 'uploads/' . str_replace('\\', '/', $m[1]);
                                 }
                                 // If it contains pictures but doesn't match above patterns
                                 elseif (stripos($raw_url, 'pictures') !== false) {
@@ -3254,7 +3287,29 @@ if (isset($_POST['logout'])) {
                                     // Remove any leading slashes or dots
                                     $image_url = ltrim($raw_url, './');
                                     if (!preg_match('~^\.\./~', $image_url) && !preg_match('~^https?://~i', $image_url)) {
-                                        $image_url = '../' . $image_url;
+                                        $image_url = 'pictures/' . basename($image_url);
+                                    }
+                                }
+                                
+                                // Verify file exists for local paths (not external URLs)
+                                if (!preg_match('~^https?://~i', $image_url)) {
+                                    $local_path = str_replace('pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
+                                    $local_path = str_replace('uploads/', __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR, $local_path);
+                                    
+                                    if (!file_exists($local_path)) {
+                                        // Try alternative extensions
+                                        $base_path = pathinfo($local_path, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($local_path, PATHINFO_FILENAME);
+                                        $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+                                        $found = false;
+                                        
+                                        foreach ($extensions as $ext) {
+                                            $test_path = $base_path . '.' . $ext;
+                                            if (file_exists($test_path)) {
+                                                $image_url = str_replace(basename($image_url), basename($test_path), $image_url);
+                                                $found = true;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                                 
@@ -3265,7 +3320,7 @@ if (isset($_POST['logout'])) {
                                 $alt_text = htmlspecialchars($image['title'] . ' - ' . $description);
                             ?>
                             <div class="gallery-item" data-category="<?php echo $category; ?>" onclick="openGalleryModal('<?php echo $image_url; ?>', '<?php echo $title; ?>', '<?php echo $description; ?>')">
-                                <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
+                                <img src="<?php echo $image_url; ?>" alt="<?php echo $alt_text; ?>" onerror="handleImageError(this, '<?php echo addslashes($image_url); ?>')" loading="lazy">
                                 <div class="gallery-item-icon">
                                     <i class="fas fa-expand"></i>
                                 </div>
@@ -3918,6 +3973,46 @@ if (isset($_POST['logout'])) {
                 });
             }
         });
+
+        // Handle image errors with AVIF to PNG fallback
+        function handleImageError(img, originalSrc) {
+            // Prevent infinite loops
+            if (img.dataset.errorHandled === 'true') {
+                return;
+            }
+            img.dataset.errorHandled = 'true';
+            
+            // If it's an AVIF file, try PNG version
+            if (originalSrc && originalSrc.includes('.avif')) {
+                const pngSrc = originalSrc.replace(/\.avif$/i, '.png');
+                img.src = pngSrc;
+                img.dataset.errorHandled = 'false'; // Allow one more try
+                img.onerror = function() {
+                    // If PNG also fails, use gray placeholder (not green)
+                    this.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
+                    this.onerror = null; // Prevent infinite loop
+                };
+            } else {
+                // Try alternative extensions
+                const extensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+                const baseSrc = originalSrc.replace(/\.[^.]+$/, '');
+                let tried = 0;
+                
+                function tryNext() {
+                    if (tried < extensions.length) {
+                        img.src = baseSrc + extensions[tried];
+                        tried++;
+                        img.onerror = tryNext;
+                    } else {
+                        // All extensions failed, use gray placeholder
+                        img.src = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27300%27%3E%3Crect fill=%27%23e5e7eb%27 width=%27400%27 height=%27300%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dominant-baseline=%27middle%27 fill=%27%23999%27 font-family=%27Arial%27 font-size=%2714%27%3EImage Not Found%3C/text%3E%3C/svg%3E';
+                        img.onerror = null;
+                    }
+                }
+                
+                tryNext();
+            }
+        }
 
         // Gallery Filter Function
         function filterGallery(category) {
