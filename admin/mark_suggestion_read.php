@@ -1,30 +1,53 @@
 <?php
-session_start();
+// Start session
+if (!headers_sent()) {
+    session_start();
+} else {
+    @session_start();
+}
 require_once '../config/database.php';
+require_once '../config/auth.php';
+
+// Check cookie-based authentication first, then fall back to session
+$auth_user = verifyAuthToken();
+if ($auth_user) {
+    // Set session variables from cookie auth for compatibility
+    $_SESSION['user_id'] = $auth_user['user_id'];
+    $_SESSION['username'] = $auth_user['username'];
+    $_SESSION['email'] = $auth_user['email'];
+    $_SESSION['role'] = $auth_user['role'];
+    $_SESSION['is_admin'] = $auth_user['is_admin'];
+}
 
 // Redirect if not logged in
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id']) && !$auth_user) {
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Not authorized']);
     exit();
 }
 
 // Check if user is admin
-try {
-    $stmt = $pdo->prepare("SELECT is_admin, role FROM users WHERE id = ?");
-    $stmt->execute([$_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    
-    $is_admin = ($user['role'] === 'admin') || ($user['is_admin'] ?? false);
-    
-    if (!$user || !$is_admin) {
+$is_admin = false;
+if (isset($_SESSION['is_admin'])) {
+    $is_admin = $_SESSION['is_admin'];
+} elseif ($auth_user) {
+    $is_admin = $auth_user['is_admin'] || $auth_user['role'] === 'admin';
+} else {
+    try {
+        $stmt = $pdo->prepare("SELECT is_admin, role FROM users WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch();
+        $is_admin = ($user['role'] === 'admin') || ($user['is_admin'] ?? false);
+    } catch(PDOException $e) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'message' => 'Not authorized']);
+        echo json_encode(['success' => false, 'message' => 'Error checking authorization']);
         exit();
     }
-} catch(PDOException $e) {
+}
+
+if (!$is_admin) {
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Error checking authorization']);
+    echo json_encode(['success' => false, 'message' => 'Not authorized']);
     exit();
 }
 
