@@ -59,56 +59,72 @@ $gallery_images = [
     ],
     // Dining Area
     [
-        'image_url' => 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=800&auto=format&fit=crop',
+        'image_url' => 'pictures/dining1.png',
         'title' => 'Dining Area',
         'category' => 'dining',
         'description' => 'Elegant Dining Space',
         'display_order' => 7,
         'is_active' => 1
     ],
+    [
+        'image_url' => 'pictures/dining2.png',
+        'title' => 'Dining Area',
+        'category' => 'dining',
+        'description' => 'Spacious Dining Room',
+        'display_order' => 8,
+        'is_active' => 1
+    ],
     // Bedroom 1
     [
-        'image_url' => 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=800&auto=format&fit=crop',
+        'image_url' => 'pictures/bedroom1-2.png',
         'title' => 'Bedroom 1',
         'category' => 'bedroom1',
         'description' => 'Master Bedroom',
-        'display_order' => 8,
+        'display_order' => 9,
         'is_active' => 1
     ],
     // Bedroom 2
     [
-        'image_url' => 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?q=80&w=800&auto=format&fit=crop',
+        'image_url' => 'pictures/bedroom2-1.png',
         'title' => 'Bedroom 2',
         'category' => 'bedroom2',
         'description' => 'Cozy Guest Room',
-        'display_order' => 9,
-        'is_active' => 1
-    ],
-    // Bathroom
-    [
-        'image_url' => 'https://images.unsplash.com/photo-1620626011761-996317b8d101?q=80&w=800&auto=format&fit=crop',
-        'title' => 'Full Bathroom',
-        'category' => 'bathroom',
-        'description' => 'Modern & Clean',
         'display_order' => 10,
         'is_active' => 1
     ],
-    // Workplace
     [
-        'image_url' => 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=800&auto=format&fit=crop',
-        'title' => 'Workplace',
-        'category' => 'workplace',
-        'description' => 'Productive Workspace',
+        'image_url' => 'pictures/bedroom2-2.png',
+        'title' => 'Bedroom 2',
+        'category' => 'bedroom2',
+        'description' => 'Comfortable Guest Space',
         'display_order' => 11,
+        'is_active' => 1
+    ],
+    // Bathroom 1
+    [
+        'image_url' => 'pictures/bathroom1.png',
+        'title' => 'Bathroom 1',
+        'category' => 'bathroom',
+        'description' => 'Modern & Clean',
+        'display_order' => 12,
+        'is_active' => 1
+    ],
+    // Bathroom 2
+    [
+        'image_url' => 'pictures/bathroom2.png',
+        'title' => 'Bathroom 2',
+        'category' => 'bathroom',
+        'description' => 'Spacious & Elegant',
+        'display_order' => 13,
         'is_active' => 1
     ],
     // Pool
     [
-        'image_url' => 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=800&auto=format&fit=crop',
+        'image_url' => 'pictures/pool1.png',
         'title' => 'Pool',
         'category' => 'pool',
         'description' => 'Resort-Style Pool',
-        'display_order' => 12,
+        'display_order' => 14,
         'is_active' => 1
     ],
     // Activity Area
