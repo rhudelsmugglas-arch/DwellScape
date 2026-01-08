@@ -706,25 +706,10 @@ if (isset($_POST['logout'])) {
                                 continue; // Skip empty URLs
                             }
                             
-                            // Handle AVIF fallback to PNG if AVIF file doesn't exist
-                            if (preg_match('/\.avif$/i', $raw_url)) {
-                                $avif_path = str_replace(['../', 'pictures/'], '', $raw_url);
-                                $avif_full_path = __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR . basename($avif_path);
-                                
-                                // If AVIF doesn't exist, try PNG version
-                                if (!file_exists($avif_full_path)) {
-                                    $png_url = preg_replace('/\.avif$/i', '.png', $raw_url);
-                                    $png_path = str_replace(['../', 'pictures/'], '', $png_url);
-                                    $png_full_path = __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR . basename($png_path);
-                                    
-                                    // If PNG exists, use it instead
-                                    if (file_exists($png_full_path)) {
-                                        $raw_url = $png_url;
-                                    }
-                                }
-                            }
-
-                            // Resolve path to web-accessible URL
+                            // Extract filename from any path format
+                            $filename = basename($raw_url);
+                            
+                            // Resolve path to web-accessible URL (gallery.php is in root, so pictures/ is at ../pictures/)
                             $image_url = '';
                             
                             // Already a full URL → leave as is
@@ -733,8 +718,9 @@ if (isset($_POST['logout'])) {
                             }
                             // Paths that start with pictures/ (relative to app root)
                             elseif (preg_match('~^pictures/~i', $raw_url)) {
-                                // From gallery.php, need to go up one level
-                                $image_url = '../' . $raw_url;
+                                // From gallery.php (root), pictures folder is at pictures/
+                                // But we need ../pictures/ for web access
+                                $image_url = '../pictures/' . $filename;
                             }
                             // Paths that start with ../pictures/ (already relative)
                             elseif (preg_match('~^\.\./pictures/~i', $raw_url)) {
@@ -755,47 +741,58 @@ if (isset($_POST['logout'])) {
                             elseif (preg_match('~[\\\\/]uploads[\\\\/](.+)$~i', $raw_url, $m)) {
                                 $image_url = '../uploads/' . str_replace('\\', '/', $m[1]);
                             }
-                            // Absolute path starting with /pictures
-                            elseif (preg_match('~^/pictures/~i', $raw_url)) {
-                                $image_url = '..' . $raw_url;
-                            }
                             // Plain filename → assume it's in pictures folder
-                            elseif (!empty($raw_url) && !preg_match('~[\\\\/]~', $raw_url)) {
-                                $image_url = '../pictures/' . $raw_url;
+                            elseif (!empty($filename) && preg_match('~\.(jpg|jpeg|png|gif|webp|avif)$~i', $filename)) {
+                                $image_url = '../pictures/' . $filename;
                             }
-                            // Try to extract filename from any path
+                            // Fallback: try to extract filename
                             else {
-                                $filename = basename($raw_url);
-                                if (!empty($filename) && preg_match('~\.(jpg|jpeg|png|gif|webp|avif)$~i', $filename)) {
-                                    $image_url = '../pictures/' . $filename;
-                                } else {
-                                    $image_url = $raw_url; // Fallback to original
-                                }
+                                $image_url = '../pictures/' . $filename;
                             }
                             
-                            // Verify file exists for local paths (not external URLs)
+                            // Verify file exists and try alternative extensions if needed
                             if (!preg_match('~^https?://~i', $image_url)) {
+                                // Get local file path
                                 $local_path = str_replace('../pictures/', __DIR__ . DIRECTORY_SEPARATOR . 'pictures' . DIRECTORY_SEPARATOR, $image_url);
                                 $local_path = str_replace('../uploads/', __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR, $local_path);
                                 
+                                // Normalize path separators
+                                $local_path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $local_path);
+                                
                                 if (!file_exists($local_path)) {
-                                    // Try alternative extensions
+                                    // Try alternative extensions (AVIF → PNG, etc.)
                                     $base_path = pathinfo($local_path, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($local_path, PATHINFO_FILENAME);
-                                    $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+                                    $extensions = ['avif', 'png', 'jpg', 'jpeg', 'webp', 'gif'];
                                     $found = false;
                                     
                                     foreach ($extensions as $ext) {
                                         $test_path = $base_path . '.' . $ext;
                                         if (file_exists($test_path)) {
-                                            $image_url = str_replace(basename($image_url), basename($test_path), $image_url);
+                                            // Update image_url to use found extension
+                                            $found_filename = pathinfo($local_path, PATHINFO_FILENAME) . '.' . $ext;
+                                            $image_url = '../pictures/' . $found_filename;
                                             $found = true;
                                             break;
                                         }
                                     }
                                     
-                                    // If still not found, mark as missing
+                                    // Also try case-insensitive filename matching
                                     if (!$found) {
-                                        // Will be handled by onerror handler
+                                        $pictures_dir = __DIR__ . DIRECTORY_SEPARATOR . 'pictures';
+                                        if (is_dir($pictures_dir)) {
+                                            $files = scandir($pictures_dir);
+                                            $base_name = pathinfo($filename, PATHINFO_FILENAME);
+                                            foreach ($files as $file) {
+                                                if ($file !== '.' && $file !== '..') {
+                                                    $file_base = pathinfo($file, PATHINFO_FILENAME);
+                                                    if (strcasecmp($base_name, $file_base) === 0) {
+                                                        $image_url = '../pictures/' . $file;
+                                                        $found = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
