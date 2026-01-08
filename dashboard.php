@@ -2775,8 +2775,14 @@ if (isset($_POST['logout'])) {
                 </div>
 
                 <div class="virtual-tour-container" style="background: white; border-radius: 12px; padding: 40px; margin-bottom: 40px;">
-                    <div class="embed-16x9">
-                        <img src="pictures/virtual.jpg" alt="Virtual tour preview" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop';">
+                    <div class="embed-16x9" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+                        <iframe 
+                            src="https://app.lapentor.com/sphere/room-tour-8?scene=695b6b6031ba7a23620807ac" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 12px;"
+                            allowfullscreen
+                            allow="vr; accelerometer; gyroscope; autoplay"
+                            title="360° Virtual Tour - Dwellscape Staycation">
+                        </iframe>
                     </div>
                     <div class="tour-info" style="margin-top: 30px; text-align: center;">
                         <h3 style="color: #1f2937; font-size: 24px; margin-bottom: 15px;">360° Property Tour</h3>
