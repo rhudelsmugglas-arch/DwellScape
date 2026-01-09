@@ -1050,22 +1050,10 @@ if (isset($_POST['logout'])) {
         <div class="header-content">
             <?php if ($is_logged_in): ?>
             <a href="dashboard.php" class="logo" aria-label="Dwellscape Staycation">
-                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
-                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
-                        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </span>
                 <span class="logo-text">DWELLSCAPE <small>STAYCATION</small></span>
             </a>
             <?php else: ?>
             <div class="logo" style="cursor: default; pointer-events: none;">
-                <span class="brand-mark" style="display: inline-flex !important; visibility: visible !important; align-items: center;">
-                    <img src="assets/img/dwellscape-logo.png" alt="Dwellscape logo" loading="eager" style="display: block !important; visibility: visible !important; opacity: 1 !important; height: 26px; width: auto; max-width: 100px; object-fit: contain; background: transparent; border: none; padding: 0; margin: 0; margin-right: 10px;" onerror="console.error('Logo failed to load:', this.src); this.style.display='none'; const fallback = this.nextElementSibling; if(fallback && fallback.classList.contains('logo-fallback')) { fallback.style.display='inline-block'; fallback.style.visibility='visible'; }">
-                    <svg class="logo-fallback" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none; height: 26px; width: 26px; vertical-align: middle; background: transparent;">
-                        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z" fill="none" stroke="#7a6a4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </span>
                 <span class="logo-text">DWELLSCAPE <small>STAYCATION</small></span>
             </div>
             <?php endif; ?>
