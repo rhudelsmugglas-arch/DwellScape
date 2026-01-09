@@ -644,6 +644,9 @@ if (isset($_POST['logout'])) {
             font-size: 11px;
             color: #6b7280;
             margin-top: 4px;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .calendar-date .today-label {
