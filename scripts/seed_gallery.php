@@ -128,13 +128,40 @@ $gallery_images = [
         'display_order' => 14,
         'is_active' => 1
     ],
-    // Activity Area
+    // Activity Area 1 - Pool/Karaoke Area
     [
-        'image_url' => 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=800&auto=format&fit=crop',
+        'image_url' => 'pictures/activity1.png',
+        'title' => 'Activity Area',
+        'category' => 'activity',
+        'description' => 'Karaoke & Entertainment',
+        'display_order' => 15,
+        'is_active' => 1
+    ],
+    // Activity Area 2 - Recreation Space (Pool Table)
+    [
+        'image_url' => 'pictures/activity2.png',
         'title' => 'Activity Area',
         'category' => 'activity',
         'description' => 'Recreation Space',
-        'display_order' => 13,
+        'display_order' => 16,
+        'is_active' => 1
+    ],
+    // Activity Area 3 - Game & Entertainment Room
+    [
+        'image_url' => 'pictures/activity3.png',
+        'title' => 'Activity Area',
+        'category' => 'activity',
+        'description' => 'Game & Entertainment Room',
+        'display_order' => 17,
+        'is_active' => 1
+    ],
+    // Activity Area 4 - Fun & Games (Karaoke)
+    [
+        'image_url' => 'pictures/activity4.png',
+        'title' => 'Activity Area',
+        'category' => 'activity',
+        'description' => 'Fun & Games',
+        'display_order' => 18,
         'is_active' => 1
     ]
 ];
