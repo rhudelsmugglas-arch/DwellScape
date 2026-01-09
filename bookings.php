@@ -594,10 +594,13 @@ if (isset($_POST['logout'])) {
             transition: all 0.3s ease;
             background: white;
             position: relative;
-            min-height: 90px;
+            min-height: 100px;
             aspect-ratio: 1.2;
             box-sizing: border-box;
             width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .calendar-date:hover:not(.booked) {
@@ -633,26 +636,35 @@ if (isset($_POST['logout'])) {
             margin-bottom: 4px;
         }
 
+        .calendar-date .month {
+            font-size: 11px;
+            color: #ff8c42;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
         .calendar-date .day {
             font-size: 20px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            flex-grow: 0;
         }
 
         .calendar-date .weekday {
             font-size: 11px;
             color: #6b7280;
-            margin-top: 4px;
+            margin-top: auto;
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
+            order: 10;
         }
 
         .calendar-date .today-label {
             position: relative;
             display: inline-block;
-            margin: 3px auto;
+            margin: 2px auto;
             background: #10b981;
             color: white;
             font-size: 7px;
@@ -663,6 +675,7 @@ if (isset($_POST['logout'])) {
             line-height: 1.3;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            order: 5;
         }
 
         .proceed-btn {
